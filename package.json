@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build:vercel": "pnpm --filter @workspace/go-course run build",
+    "typecheck:vercel": "tsc --project api/tsconfig.json",
+    "build:vercel": "pnpm run typecheck:vercel && pnpm --filter @workspace/go-course run build",
     "build:render": "pnpm run typecheck:libs && pnpm --filter @workspace/api-server run typecheck && pnpm --filter @workspace/api-server run build",
     "db:setup": "node --enable-source-maps artifacts/api-server/dist/setup.mjs",
     "start:render": "pnpm run db:setup && pnpm --filter @workspace/api-server run start",
@@ -14,11 +15,14 @@
   },
   "private": true,
   "packageManager": "pnpm@10.26.1",
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.3"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"
   }
