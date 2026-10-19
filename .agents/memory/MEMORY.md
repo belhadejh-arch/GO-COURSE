@@ -1,0 +1,1 @@
+- [Neon migration baseline](neon-migration-baseline.md) — Existing school tables may predate Drizzle’s migration ledger; adopt the verified baseline before additive migrations.
