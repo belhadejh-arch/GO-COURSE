@@ -81,7 +81,7 @@ const person = (isTeacher: boolean): Field[] => [
   { key: 'firstName', label: 'الاسم', type: 'text', required: true },
   { key: 'lastName', label: 'اللقب', type: 'text', required: true },
   { key: 'email', label: 'بريد الدخول', type: 'email', required: true, hint: 'يسلّم المدير هذا البريد وكلمة المرور المؤقتة لصاحب الحساب.' },
-  { key: 'loginPassword', label: 'كلمة مرور مؤقتة', type: 'password', required: true, hideFor: ['teacher','student','staff'], hint: '12 حرفًا على الأقل. مطلوبة للحساب الجديد؛ اتركها فارغة عند التعديل للاحتفاظ بالكلمة الحالية.' },
+  { key: 'loginPassword', label: 'كلمة مرور مؤقتة', type: 'password', required: true, hideFor: ['teacher','student','staff'], hint: 'ينشئ النظام كلمة مؤقتة تلقائيًا ويعرضها بعد الحفظ لتسليمها لصاحب الحساب. لا تستخدم بريده الإلكتروني كلمة مرور.' },
   { key: 'phone', label: 'الهاتف', type: 'text', required: true },
   ...(isTeacher ? [
     { key: 'languageIds', label: 'اللغات التي يدرّسها', type: 'relmulti' as const, entity: 'languages', wide: true, required: true },

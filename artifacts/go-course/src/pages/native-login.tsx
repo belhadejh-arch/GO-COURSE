@@ -56,6 +56,10 @@ export default function NativeLoginPage() {
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     if (pending) return;
+    if (email.trim().toLowerCase() === password.trim().toLowerCase()) {
+      setError('كلمة المرور ليست عنوان البريد الإلكتروني. استخدم كلمة المرور المؤقتة التي أعطاها لك المدير، أو اطلب منه إعادة ضبطها.');
+      return;
+    }
     setPending(true); setError('');
     try {
       const r = await login(email.trim(), password);
@@ -124,7 +128,7 @@ export default function NativeLoginPage() {
                 <input id="login-email" dir="ltr" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required
                   className="field-input text-left" data-testid="login-email" />
               </div>
-              <PasswordField id="login-password" label="كلمة المرور" value={password} onChange={setPassword} testId="login-password" autoComplete="current-password" />
+              <PasswordField id="login-password" label="كلمة المرور" value={password} onChange={setPassword} testId="login-password" autoComplete="current-password" hint="أدخل كلمة المرور المؤقتة التي سلّمها لك المدير؛ عنوان البريد الإلكتروني ليس كلمة المرور." />
               <button type="submit" disabled={pending || !email || !password} className={btn} data-testid="login-submit">
                 {pending && <Loader2 className="h-4 w-4 animate-spin" />}{pending ? 'جارٍ الدخول...' : 'دخول'}
               </button>

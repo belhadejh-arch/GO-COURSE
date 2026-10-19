@@ -248,7 +248,7 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
         </div>
       )}
 
-      <RecordDialog cfg={cfg} open={open} onClose={() => setOpen(false)} record={editing} lookup={lookup} role={role} defaults={studentParam?{studentId:studentParam}:undefined} readOnly={!!editing && !rowWritable(editing)} />
+      <RecordDialog cfg={cfg} open={open} onClose={() => setOpen(false)} record={editing} lookup={lookup} role={role} defaults={studentParam?{studentId:studentParam}:undefined} readOnly={!!editing && !rowWritable(editing)} onCredentialsCreated={setTemporaryCredentials} />
 
       <Dialog open={!!temporaryCredentials} onOpenChange={(open)=>!open&&setTemporaryCredentials(null)}>
         <DialogContent dir="rtl" className="sm:max-w-md">

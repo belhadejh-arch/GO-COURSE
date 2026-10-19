@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
 import { Loader2, Paperclip, Plus, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { useListSchoolAccounts, useCreateSchoolRecord, useRequestSchoolUpload, useUpdateSchoolRecord } from '@workspace/api-client-react';
@@ -328,9 +328,16 @@ function ViewValue({ f, data, lookup, role }: { f: Field; data: Data; lookup: Lo
 /* ---------------- dialog ---------------- */
 interface Props {
   cfg: EntityConfig; open: boolean; onClose: () => void; record?: SchoolRecord | null; lookup: Lookup; role: Role; defaults?: Data; readOnly?: boolean;
+  onCredentialsCreated?: (credentials: {email:string;password:string}) => void;
 }
 
-export function RecordDialog({ cfg, open, onClose, record, lookup, role, defaults, readOnly }: Props) {
+function makeTemporaryPassword() {
+  const bytes=new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+
+export function RecordDialog({ cfg, open, onClose, record, lookup, role, defaults, readOnly, onCredentialsCreated }: Props) {
   const { toast } = useToast();
   const invalidate = useInvalidateSchool();
   const create = useCreateSchoolRecord();
@@ -339,13 +346,18 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
   const [status, setStatus] = useState(cfg.statuses[0]?.value ?? 'active');
   const [data, setData] = useState<Data>({});
   const [error, setError] = useState('');
+  const generatedPassword = useRef('');
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { generatedPassword.current=''; return; }
     setError('');
     const base: Data = {};
     cfg.fields.forEach((f) => { if (f.def !== undefined) base[f.key] = f.def; });
     const src: Data = record ? { ...record.data } : { ...base, ...defaults };
+    if (!record && role === 'admin' && ['students','teachers'].includes(cfg.key)) {
+      if (!generatedPassword.current) generatedPassword.current=makeTemporaryPassword();
+      src.loginPassword=generatedPassword.current;
+    }
     cfg.fields.forEach((f) => { if (f.type === 'datetime') src[f.key] = toLocalInput(src[f.key]); });
     setData(src);
     setTitle(record?.title ?? '');
@@ -404,7 +416,13 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
     let st = status;
     if (cfg.key === 'submissions' && role !== 'student' && out.grade !== undefined && st === 'submitted') st = 'graded';
     const body = { title: t, status: st, data: out };
-    const done = (r: SchoolRecord) => { invalidate(cfg.key, r.id); toast({ title: record ? 'تم حفظ التعديلات' : 'تمت الإضافة بنجاح' }); onClose(); };
+    const done = (r: SchoolRecord) => {
+      invalidate(cfg.key, r.id);
+      toast({ title: record ? 'تم حفظ التعديلات' : 'تمت الإضافة بنجاح' });
+      if(!record&&['students','teachers'].includes(cfg.key)&&typeof out.loginPassword==='string'&&typeof out.email==='string')
+        onCredentialsCreated?.({email:out.email.trim().toLowerCase(),password:out.loginPassword});
+      onClose();
+    };
     if (record) update.mutate({ entity: cfg.key, id: record.id, data: body }, { onSuccess: done, onError: (er) => setError(errMsg(er)) });
     else create.mutate({ entity: cfg.key, data: body }, { onSuccess: done, onError: (er) => setError(errMsg(er)) });
   };
