@@ -1,5 +1,6 @@
-import { Router } from "express";
-import { db, schoolRecords, schoolUsers, schoolFiles } from "@workspace/db";
+import { Router,raw } from "express";
+import { randomUUID } from "node:crypto";
+import { db, schoolRecords, schoolUsers, schoolFiles,schoolFileContents } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
   CreateSchoolRecordBody, UpdateSchoolRecordBody, RequestSchoolUploadBody,
@@ -9,10 +10,11 @@ import {
 import { access, adminConfigured, canRead, canWrite, catalog, entities, fail, numberId, privileged, serialize } from "../lib/school-access";
 import { validateData, validateStatus } from "../lib/school-validation";
 import { persist } from "../lib/school-service";
-import { ObjectStorageService } from "../lib/objectStorage";
+import { SchoolFileStorage, validFilePrefix } from "../lib/database-files";
+import { fileTransferUrl,verifyFileToken } from "../lib/file-tokens";
 
 const router = Router();
-const storage = new ObjectStorageService();
+const storage = new SchoolFileStorage();
 const entityOf=(value:unknown) => {
   const entity=String(value);
   if (!entities.has(entity)) fail(404,"القسم غير موجود.");
@@ -67,15 +69,12 @@ async function checkFiles(a:Awaited<ReturnType<typeof access>>,data:Record<strin
     if (!path) continue;
     const [file]=await db.select().from(schoolFiles).where(eq(schoolFiles.objectPath,String(path)));
     if (!file || (file.ownerId!==a.user?.id && !privileged(a,"resources","write"))) fail(403,"الملف غير متاح لهذا المستخدم.");
-    const object=await storage.getObjectEntityFile(file.objectPath);
+    const object=await storage.open(file.objectPath);
     const [metadata]=await object.getMetadata();
     if (Number(metadata.size)!==file.size || Number(metadata.size)>52428800) fail(400,"حجم الملف المرفوع لا يطابق البيانات المسجلة.");
     const [prefix]=await object.download({start:0,end:15});
     const type=file.contentType;
-    const valid=type==="image/png"?prefix.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):
-      type==="image/jpeg"?prefix[0]===255 && prefix[1]===216:
-      type==="image/webp"?prefix.toString("ascii",0,4)==="RIFF" && prefix.toString("ascii",8,12)==="WEBP":
-      type==="application/pdf"?prefix.toString("ascii",0,5)==="%PDF-":true;
+    const valid=validFilePrefix(type,prefix);
     if (!valid) fail(400,"محتوى الملف لا يطابق نوعه المسموح.");
     if (key==="photoPath" && !["image/png","image/jpeg","image/webp"].includes(type)) fail(400,"صورة الملف الشخصي يجب أن تكون PNG أو JPEG أو WebP.");
   }
@@ -185,10 +184,61 @@ router.post("/school/storage/upload",async(req,res)=>{
   const allowed=["image/jpeg","image/png","image/webp","application/pdf","audio/mpeg","audio/wav","audio/webm","audio/ogg","video/mp4","video/webm","text/plain","application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
   if (!allowed.includes(data.contentType)) fail(400,"نوع الملف غير مسموح.");
   if (data.courseId && !privileged(a,"resources","write") && !a.courseIds.has(data.courseId)) fail(403,"الدورة غير مسندة إليك.");
+  if(process.env.FILE_STORAGE_PROVIDER==="database"){
+    const objectPath=`/objects/database/${randomUUID()}`;
+    const uploadURL=fileTransferUrl(objectPath,"upload");
+    await db.insert(schoolFiles).values({objectPath,ownerId:a.user.id,courseId:data.courseId,name:data.name,contentType:data.contentType,size:data.size,storageProvider:"database"});
+    res.json({uploadURL,objectPath});return;
+  }
   const uploadURL=await storage.getObjectEntityUploadURL();
   const objectPath=storage.normalizeObjectEntityPath(uploadURL);
   await db.insert(schoolFiles).values({objectPath,ownerId:a.user.id,courseId:data.courseId,name:data.name,contentType:data.contentType,size:data.size});
   res.json({uploadURL,objectPath});
+});
+// Signed, short-lived transfers go directly to Render, bypassing Vercel's
+// request-body limits. The token grants just one file and one operation.
+router.put("/school/storage/transfer/:id",(req,_res,next)=>{
+  const path=`/objects/database/${req.params.id}`;
+  if(!verifyFileToken(req.query.token,path,"upload")||req.query.action!=="upload")fail(403,"رابط الرفع غير صالح أو انتهت صلاحيته.");
+  next();
+},raw({type:()=>true,limit:"50mb"}),async(req,res)=>{
+  const path=`/objects/database/${req.params.id}`;
+  const [file]=await db.select().from(schoolFiles).where(eq(schoolFiles.objectPath,path));
+  if(!file||file.storageProvider!=="database")fail(404,"ملف غير موجود.");
+  const content=req.body as Buffer;
+  if(!Buffer.isBuffer(content)||content.length!==file.size)fail(400,"حجم الملف لا يطابق الحجم المسجل.");
+  if((req.headers["content-type"]||"").split(";")[0]!==file.contentType||!validFilePrefix(file.contentType,content.subarray(0,16)))fail(400,"نوع الملف لا يطابق محتواه.");
+  const inserted=await db.insert(schoolFileContents).values({objectPath:path,bytes:content}).onConflictDoNothing().returning({path:schoolFileContents.objectPath});
+  if(!inserted.length)fail(409,"تم رفع هذا الملف بالفعل؛ اطلب رابطًا جديدًا للاستبدال.");
+  res.status(201).json({uploaded:true});
+});
+router.get("/school/storage/transfer/:id",async(req,res)=>{
+  const path=`/objects/database/${req.params.id}`;
+  if(!verifyFileToken(req.query.token,path,"download")||req.query.action!=="download")fail(403,"رابط التحميل غير صالح أو انتهت صلاحيته.");
+  const [file]=await db.select().from(schoolFiles).where(eq(schoolFiles.objectPath,path));
+  if(!file||file.storageProvider!=="database")fail(404,"الملف غير موجود.");
+  const object=await storage.open(path);
+  const [metadata]=await object.getMetadata();
+  const total=Number(metadata.size);
+  let start=0,end=total-1;
+  const range=req.headers.range;
+  if(range){
+    const match=/^bytes=(\d*)-(\d*)$/.exec(range);
+    if(!match||(!match[1]&&!match[2])){res.setHeader("Content-Range",`bytes */${total}`);res.sendStatus(416);return;}
+    if(!match[1])start=Math.max(0,total-Number(match[2]));
+    else{start=Number(match[1]);if(match[2])end=Math.min(end,Number(match[2]));}
+    if(start>end||start>=total){res.setHeader("Content-Range",`bytes */${total}`);res.sendStatus(416);return;}
+    res.status(206).setHeader("Content-Range",`bytes ${start}-${end}/${total}`);
+  }
+  res.setHeader("Accept-Ranges","bytes");
+  res.setHeader("Content-Type",file.contentType);
+  res.setHeader("Content-Length",end-start+1);
+  res.setHeader("Cache-Control","private, no-store");
+  res.setHeader("X-Content-Type-Options","nosniff");
+  const inline=/^(image\/(jpeg|png|webp)|audio\/|video\/|application\/pdf)/.test(file.contentType);
+  res.setHeader("Content-Disposition",`${inline?"inline":"attachment"}; filename*=UTF-8''${encodeURIComponent(file.name)}`);
+  const [bytes]=await object.download({start,end});
+  res.end(bytes);
 });
 router.get("/school/storage/objects/{*path}",async(req,res)=>{
   const a=await access(req);
@@ -201,7 +251,8 @@ router.get("/school/storage/objects/{*path}",async(req,res)=>{
   const attached=a.rows.filter(r=>contains(r.data));
   const permitted=stored.ownerId===a.user.id || privileged(a,"resources") || attached.some(r=>canRead(a,r));
   if (!permitted) fail(403,"الملف غير مشمول بصلاحياتك أو اشتراكك.");
-  const file=await storage.getObjectEntityFile(objectPath);
+  if(stored.storageProvider==="database"){res.setHeader("Cache-Control","private, no-store");res.redirect(307,fileTransferUrl(objectPath,"download"));return;}
+  const file=await storage.open(objectPath);
   const [metadata]=await file.getMetadata();
   if (Number(metadata.size)!==stored.size) fail(400,"حجم الملف غير صالح.");
   res.setHeader("Content-Type",stored.contentType);

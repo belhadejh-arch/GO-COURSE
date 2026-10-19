@@ -20,8 +20,9 @@ import { PublicLayout } from '@/components/layouts';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, refetchInterval: 30_000 } } });
 
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const externalAuth = import.meta.env.VITE_AUTH_MODE === 'external';
+const clerkPubKey = externalAuth ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const clerkProxyUrl = externalAuth ? undefined : import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function stripBase(path: string): string {

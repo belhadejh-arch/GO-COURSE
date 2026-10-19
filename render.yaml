@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: go-course-api
+    runtime: node
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build:render
+    startCommand: pnpm run start:render
+    healthCheckPath: /api/readyz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_MODE
+        value: external
+      - key: FILE_STORAGE_PROVIDER
+        value: database
+      - key: DB_POOL_MAX
+        value: "5"
+      - key: DATABASE_URL
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: OWNER_EMAIL
+        sync: false

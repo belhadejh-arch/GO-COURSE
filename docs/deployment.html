@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GO COURSE — Render / Vercel / Neon</title>
+<style>body{margin:0;background:#f5f3ff;color:#262842;font:17px/1.9 Arial,sans-serif}main{max-width:1000px;margin:30px auto;background:white;padding:35px;border-radius:20px}h1,h2{color:#347ce2}h2{margin-top:35px;font-size:25px}pre{background:#22263e;color:white;padding:16px;border-radius:12px;overflow:auto;direction:ltr;text-align:left;line-height:1.7}code{direction:ltr;display:inline-block;font-size:14px;overflow-wrap:anywhere}td,th{padding:10px;border:1px solid #ddd;vertical-align:top;text-align:right}table{width:100%;border-collapse:collapse}th{background:#eee8ff}.note{padding:16px;background:#fff1c7;border-right:4px solid #ffbb37}a{color:#347ce2}@media(max-width:600px){main{margin:0;padding:18px}table{font-size:14px}}@media print{body{background:white}main{margin:0}}</style>
+<main>
+<h1>نشر GO COURSE</h1>
+<p><strong>الخادم: Render · الواجهة: Vercel · البيانات والملفات الجديدة: Neon</strong></p>
+<div class="note">تم تجهيز الكود والملفات؛ لم يُنشَر المشروع على حساباتك ولم يُختبر اتصال Neon الحقيقي بعد. لا تضع رابط قاعدة البيانات أو المفتاح السري للمصادقة في الواجهة أو Git. استعمل قاعدة Neon فارغة لأول تشغيل.</div>
+<h2>1. المتطلبات</h2>
+<ol>
+<li>ارفع المستودع إلى GitHub لربطه بالاستضافتين. يجب تضمين <code>pnpm-lock.yaml</code> و<code>lib/db/migrations</code> و<code>api</code> والملفين <code>render.yaml</code> و<code>vercel.json</code>.</li>
+<li>Runtime: Node.js 22، ومدير الحزم <code>pnpm 10.26.1</code> مثبت في packageManager.</li>
+<li>من Neon انسخ رابط PostgreSQL المباشر Direct مع TLS: <code>?sslmode=require</code>. يمكن استخدامه في التشغيل والترحيلات معًا.</li>
+<li>إذا استعملت رابطًا Pooled في <code>DATABASE_URL</code>، ضع الرابط المباشر كذلك في <code>DATABASE_MIGRATION_URL</code>. الترحيلات تحتاج اتصالًا ثابتًا لقفلها ومنع تشغيلها المتزامن.</li>
+<li>للنشر الخارجي، استخدم تطبيق Clerk مستقل بمفاتيح مطابقة للواجهة والخادم، واضبط دومين Vercel في إعداداته. لا تُحذف إعدادات Clerk الحالية في Replit؛ تبقى للمعاينة. الحسابات وكلمات المرور القديمة لا تنتقل تلقائيًا بين تطبيقي المصادقة.</li>
+</ol>
+<h2>2. Backend على Render</h2>
+<p>أنشئ Web Service من المستودع أو Blueprint باستخدام <code>render.yaml</code>. اختر Node، واترك Root Directory فارغًا: العمل من <strong>جذر المستودع</strong> وليس مجلد api-server.</p>
+<p><strong>Build Command</strong></p>
+<pre>pnpm install --frozen-lockfile &amp;&amp; pnpm run build:render</pre>
+<p><strong>Start Command</strong></p>
+<pre>pnpm run start:render</pre>
+<p>هذا الأمر يشغّل ترحيلات الجداول وتهيئة اللغات والمستويات مرة واحدة بصورة آمنة قابلة للإعادة، ثم يشغّل الخادم. إذا فشلت تهيئة القاعدة لا يبدأ الخادم بنجاح زائف. لا يستعمل push-force ولا يمسح السجلات.</p>
+<p><strong>Health Check Path:</strong> <code>/api/readyz</code>؛ يفحص إمكانية قراءة الجداول من القاعدة. Render يوفّر <code>PORT</code> تلقائيًا.</p>
+<table>
+<tr><th>متغير Render</th><th>القيمة أو المعنى</th></tr>
+<tr><td><code>DATABASE_URL</code></td><td>رابط Neon السري مع TLS. لا تضفه إلى Vercel.</td></tr>
+<tr><td><code>DATABASE_MIGRATION_URL</code></td><td>اختياري فقط إذا كان DATABASE_URL رابط Pooler؛ هنا توضع نسخة Direct من Neon.</td></tr>
+<tr><td><code>CLERK_SECRET_KEY</code></td><td>المفتاح السري لتطبيق Clerk الخارجي؛ يبقى على الخادم.</td></tr>
+<tr><td><code>CLERK_PUBLISHABLE_KEY</code></td><td>المفتاح العام لنفس تطبيق Clerk.</td></tr>
+<tr><td><code>OWNER_EMAIL</code></td><td>بريد المالك المؤكد الذي يحصل على صلاحيات المدير عند الدخول.</td></tr>
+<tr><td><code>FRONTEND_URL</code></td><td>رابط Vercel الكامل مثل <code>https://your-app.vercel.app</code> دون / أخيرة. إن أضفت دومينًا مخصصًا فاستخدم قائمة أصول محددة مفصولة بفواصل، لا wildcard.</td></tr>
+<tr><td><code>PUBLIC_API_URL</code></td><td>رابط Render الكامل مثل <code>https://your-api.onrender.com</code> دون /api ودون / أخيرة.</td></tr>
+<tr><td><code>AUTH_MODE</code></td><td><code>external</code></td></tr>
+<tr><td><code>FILE_STORAGE_PROVIDER</code></td><td><code>database</code></td></tr>
+<tr><td><code>NODE_ENV</code></td><td><code>production</code></td></tr>
+<tr><td><code>NODE_VERSION</code></td><td><code>22</code></td></tr>
+<tr><td><code>DB_POOL_MAX</code></td><td><code>5</code>؛ اجمع عدد الاتصالات عند زيادة عدد الخوادم.</td></tr>
+</table>
+<p>يمكن تجهيز الخدمتين أولًا للحصول على الرابطين، ثم تحديث <code>FRONTEND_URL</code> و<code>PUBLIC_API_URL</code> وإعادة نشر Render. فشل فحص الجاهزية قبل إكمال المتغيرات مقصود، وليس نجاحًا وهميًا.</p>
+<h2>3. Frontend على Vercel</h2>
+<p>استورد <strong>المستودع نفسه</strong>. Root Directory هو جذر المستودع <code>./</code> وFramework Preset هو <code>Other</code>. تُقرأ الإعدادات من <code>vercel.json</code>، بما فيها مسارات SPA حتى يعمل تحديث صفحة داخلية مباشرة.</p>
+<p><strong>Install Command</strong></p>
+<pre>pnpm install --frozen-lockfile</pre>
+<p><strong>Build Command</strong></p>
+<pre>pnpm run build:vercel</pre>
+<p><strong>Output Directory</strong></p>
+<pre>artifacts/go-course/dist/public</pre>
+<p>لا يوجد Start Command على Vercel: الواجهة ملفات ثابتة، ومسارات API تستخدم جسر Edge إلى Render. لا تستعمل <code>vite preview</code> كخادم إنتاج.</p>
+<table><tr><th>متغير Vercel</th><th>القيمة</th></tr>
+<tr><td><code>BACKEND_URL</code></td><td>رابط Render نفسه المستخدم في PUBLIC_API_URL، دون /api. هذا إعداد خادمي لجسر API.</td></tr>
+<tr><td><code>VITE_AUTH_MODE</code></td><td><code>external</code></td></tr>
+<tr><td><code>VITE_CLERK_PUBLISHABLE_KEY</code></td><td>نفس المفتاح العام الموجود في Render.</td></tr></table>
+<p>لا تضف DATABASE_URL أو CLERK_SECRET_KEY إلى Vercel، ولا تسبق الأسرار بـ VITE_. لا تضبط VITE_CLERK_PROXY_URL في النشر الخارجي. بعد تعديل متغير VITE_ أعد بناء الواجهة لأن قيمته تُضمّن أثناء البناء.</p>
+<h2>4. ربط البيانات والملفات</h2>
+<ul>
+<li>كل بيانات الأعمال تُقرأ وتُكتب بواسطة Render في PostgreSQL المشار إليه بـ DATABASE_URL؛ لا اتصال مباشر بين متصفح الطالب وNeon.</li>
+<li>البيانات التعليمية والمالية والأدوار والروابط والتخصصات والملفات محفوظة في ستة جداول، تشمل جدولًا خاصًا ببايتات الملفات داخل Neon.</li>
+<li>الصور والمرفقات الجديدة حتى 50MB تذهب مباشرة إلى Render برابط موقّع لمدة عشر دقائق؛ لا تُحفظ على قرص Render المؤقت، ولا تمر بايتاتها عبر حدود طلبات Vercel.</li>
+<li>قراءة ملف خاص تبدأ بفحص صلاحيات الحساب والاشتراك، ثم التحويل إلى رابط تحميل مؤقت. الرفع لمرة واحدة مع تحقق من الحجم ونوع الصورة/PDF؛ الصوت والفيديو يدعمان طلبات Range.</li>
+<li>تخزين الفيديوهات في قاعدة البيانات يستهلك مساحة وذاكرة ونقلًا أكثر. راقب حدود Neon؛ ينصح لاحقًا بمخزن ملفات متخصص إذا أصبح حجم الوسائط كبيرًا.</li>
+<li>كلمات المرور والجلسات تديرها Clerk ولا تُخزّن كنص داخل Neon.</li>
+<li>توصيل قاعدة جديدة لا ينقل بيانات قاعدة Replit القديمة أو الملفات القديمة تلقائيًا. إن كانت لديك بيانات فعلية، انسخها احتياطيًا وخطّط لترحيل منفصل قبل تبديلها؛ لا تشغّل الترحيل الابتدائي فوق مخطط موجود دون مراجعته.</li>
+</ul>
+<h2>5. التحقق بعد النشر</h2>
+<pre>curl https://YOUR-API.onrender.com/api/readyz
+curl https://YOUR-FRONTEND.vercel.app/api/readyz</pre>
+<p>يُفترض أن يعيدا <code>{"status":"ok","database":"connected"}</code>. ثم افتح كتالوج اللغات، ادخل ببريد المالك وأكّد البريد، أنشئ أستاذًا ودورة وطالبًا، ارفع صورة، واختبر استمرار البيانات بعد إعادة تشغيل Render.</p>
+<p>اختبر الدعوات واستعادة كلمة المرور والروابط من دومين الإنتاج الحقيقي. لا يكفي نجاح البناء لإثبات نجاح المصادقة.</p>
+<h2>6. أوامر إضافية</h2>
+<pre># من جذر المستودع، بعد ضبط المتغيرات في بيئة آمنة
+pnpm run typecheck
+pnpm --filter @workspace/api-server test
+
+# بناء الخادم ثم تهيئة قاعدة جديدة دون تشغيل الخادم
+pnpm run build:render
+pnpm run db:setup
+
+# توليد ترحيل جديد عند تغيير المخطط، ومراجعة SQL قبل نشره
+pnpm --filter @workspace/db run generate</pre>
+<p>لا تُشغّل db:setup فوق قاعدة التطوير الحالية التي أُنشئت سابقًا بـ db push؛ خط الترحيل الأول موجّه لقاعدة جديدة. لا تستعمل push-force مع بيانات فعلية.</p>
+<p>خطط للنسخ الاحتياطي واختبار الاستعادة. التذكيرات تعمل أثناء بقاء خدمة Render مشغّلة؛ الخدمة التي تتوقف عند الخمول تؤخر إرسالها حتى التشغيل التالي.</p>
+</main></html>

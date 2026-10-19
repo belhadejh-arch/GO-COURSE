@@ -11,6 +11,7 @@ Arabic RTL language-school web platform with a public catalog and permission-sco
 - No fabricated business records, localStorage databases, silent fake integrations, destructive resets, or plaintext passwords.
 - Weekly frequency is 2–7, independent of total lessons (16 by default).
 - A student can have multiple academic enrollments; never model one language/level as the whole student's academic identity.
+- Deployment target: backend on Render, frontend on Vercel, all platform data on Neon. The user will put DATABASE_URL and other secrets in Render.
 
 ## Run & Operate
 
@@ -50,10 +51,13 @@ Other staff roles are assigned by an admin through Settings after those accounts
 - Serialize school writes with a PostgreSQL transaction advisory lock. **Why:** a timetable conflict checked from a stale request snapshot must not permit concurrent double booking.
 - Only catalog configuration (15 languages × 6 levels) is seeded. **Why:** the requested platform must not represent invented students, courses, or revenue as real.
 - Course schedule changes affect future sessions only. Completed/past sessions retain history.
-- Auth and private file storage currently use managed services in this environment. External Vercel/Render deployment is not claimed complete; replacing sidecar-backed storage and configuring the authentication production domains are prerequisites.
+- Preserve managed Clerk/App Storage in this preview; external deployments use `AUTH_MODE=external` and `FILE_STORAGE_PROVIDER=database`. **Why:** Render cannot use the Replit storage sidecar, and the existing preview should not be broken by external configuration.
+- New production file bytes and metadata are stored in Neon; signed ten-minute direct Render transfers bypass the Vercel bridge body-size limits. Existing Replit files are not silently copied.
+- Use a direct Neon connection for migrations (optional `DATABASE_MIGRATION_URL` if runtime uses a pooler). **Why:** session advisory locks used to serialize migrations require a stable database session.
+- `docs/deployment.html`, `render.yaml`, `vercel.json`, and the `.env.*.example` files describe deployment; credentials must never be committed or sent to the frontend.
 
 ## Current acceptance boundary
 
 The first build passes static checks and domain unit tests and the public homepage was viewed at desktop and phone widths.
-Signed-in UI flows, real invitation delivery, cloud uploads, and payment-confirmation transactions have not yet been exercised end-to-end; owner setup is pending.
+Signed-in UI flows, real invitation delivery, cloud uploads, and payment-confirmation transactions have not yet been exercised end-to-end. Owner configuration is saved in this preview.
 Electronic payments are not connected. No claim of full compliance with every acceptance item in the source requirements.

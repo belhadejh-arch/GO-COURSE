@@ -14,3 +14,17 @@ mtime_ms = 1792416376404
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:b5e8fab6-c6b4-4d3d-a5cc-b81dd697345c/105495e9-cced-4b83-bff9-f942c3ebd0b5/d07f27b7-de6c-4409-a7ff-4ed8c412f647"
 storage_version_token = "1792416450628860"
 content_type = "text/html"
+
+[[outputs]]
+id = "gMOAnjiNQ0vXUK_IZo8OH"
+uri = "file://docs/deployment.html"
+type = "html"
+title = "دليل نشر GO COURSE — Render وVercel وNeon"
+description = "أوامر البناء والتشغيل، جميع متغيرات الاستضافة، إعداد قاعدة Neon والمصادقة والملفات، وخطوات التحقق بعد النشر."
+logical_id = "19dcda97-1ea6-42e5-a639-ca5325d75fdf"
+content_hash = "sha256:acce6b2dfeb88b23627c5f937d4e6dfe565ad12796ee30df58fda011b22f526a"
+size = 10974
+mtime_ms = 1792419090400
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:b5e8fab6-c6b4-4d3d-a5cc-b81dd697345c/19dcda97-1ea6-42e5-a639-ca5325d75fdf/a9714c6f-e834-4f5c-9898-74987af78e77"
+storage_version_token = "1792419295421420"
+content_type = "text/html"

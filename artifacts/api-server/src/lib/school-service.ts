@@ -202,7 +202,8 @@ export async function persist(a:Access,entity:string,title:string,status:string,
       if (!matches.data.length) {
         try {
           if (data.resendInvite && data.invitationId) await clerkClient.invitations.revokeInvitation(String(data.invitationId));
-          const invitation=await clerkClient.invitations.createInvitation({emailAddress:email,publicMetadata:{schoolRole:entity==="teachers"?"teacher":"student"},ignoreExisting:false});
+          const frontend=process.env.FRONTEND_URL?.split(",")[0]?.trim();
+          const invitation=await clerkClient.invitations.createInvitation({emailAddress:email,publicMetadata:{schoolRole:entity==="teachers"?"teacher":"student"},ignoreExisting:false,...(frontend?{redirectUrl:`${frontend}/sign-up`}:{})});
           row.data={...row.data,invitationId:invitation.id,invitationStatus:"sent",resendInvite:false};
           await tx.update(schoolRecords).set({data:row.data}).where(eq(schoolRecords.id,row.id));
         } catch { fail(502,"تعذّر إرسال الدعوة. لم تُحفظ العملية؛ راجع إعدادات البريد ثم أعد المحاولة."); }

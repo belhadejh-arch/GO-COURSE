@@ -1,6 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startSchoolReminders } from "./lib/school-reminders";
+import { checkDeploymentConfig } from "./lib/deployment-config";
+checkDeploymentConfig();
 
 const rawPort = process.env["PORT"];
 

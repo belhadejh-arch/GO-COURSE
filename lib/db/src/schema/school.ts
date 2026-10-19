@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, jsonb, integer, boolean, uniqueIndex, index, check } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, jsonb, integer, boolean, uniqueIndex, index, check, customType } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -48,7 +48,15 @@ export const schoolFiles = pgTable("school_files", {
   name: text("name").notNull(),
   contentType: text("content_type").notNull(),
   size: integer("size").notNull(),
+  storageProvider: text("storage_provider").notNull().default("replit"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+const bytea=customType<{data:Buffer;driverData:Buffer}>({dataType:()=>"bytea"});
+export const schoolFileContents=pgTable("school_file_contents",{
+  objectPath:text("object_path").primaryKey().references(()=>schoolFiles.objectPath),
+  bytes:bytea("bytes").notNull(),
+  uploadedAt:timestamp("uploaded_at",{withTimezone:true}).notNull().defaultNow(),
 });
 
 export const teacherSpecialties = pgTable("teacher_specialties", {
