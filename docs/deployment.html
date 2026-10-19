@@ -50,7 +50,7 @@
 <pre>artifacts/go-course/dist/public</pre>
 <p>لا يوجد Start Command على Vercel: الواجهة ملفات ثابتة، ومسارات API تستخدم جسر Edge إلى Render. لا تستعمل <code>vite preview</code> كخادم إنتاج.</p>
 <table><tr><th>متغير Vercel</th><th>القيمة</th></tr>
-<tr><td><code>BACKEND_URL</code></td><td>رابط Render نفسه المستخدم في PUBLIC_API_URL، دون /api. هذا إعداد خادمي لجسر API.</td></tr>
+<tr><td><code>BACKEND_URL</code></td><td>رابط Render نفسه المستخدم في PUBLIC_API_URL، دون /api. العنوان الافتراضي للمشروع هو <code>https://go-course-ze56.onrender.com</code>؛ يمكن تغييره بهذا المتغير. هذا عنوان خادمي عام وليس سر قاعدة بيانات.</td></tr>
 <tr><td><code>VITE_AUTH_MODE</code></td><td><code>external</code></td></tr>
 <tr><td><code>VITE_CLERK_PUBLISHABLE_KEY</code></td><td>نفس المفتاح العام الموجود في Render.</td></tr></table>
 <p>لا تضف DATABASE_URL أو CLERK_SECRET_KEY إلى Vercel، ولا تسبق الأسرار بـ VITE_. لا تضبط VITE_CLERK_PROXY_URL في النشر الخارجي. بعد تعديل متغير VITE_ أعد بناء الواجهة لأن قيمته تُضمّن أثناء البناء.</p>

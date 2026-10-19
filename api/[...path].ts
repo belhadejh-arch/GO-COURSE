@@ -1,10 +1,10 @@
 // Vercel's same-origin /api bridge keeps Clerk cookies first-party. Secrets for
-// Neon and Clerk never belong in Vercel: only BACKEND_URL is needed here.
+// Neon and Clerk secrets never belong in Vercel. The public Render origin is
+// intentionally safe to commit; BACKEND_URL can override it for other deployments.
 export const config={runtime:"edge"};
 
 export async function handler(request:Request):Promise<Response>{
-  const configured=process.env.BACKEND_URL;
-  if(!configured)return Response.json({error:"BACKEND_URL is not configured in Vercel."},{status:503});
+  const configured=process.env.BACKEND_URL?.trim()||"https://go-course-ze56.onrender.com";
   let backend:URL;
   try{
     backend=new URL(configured);

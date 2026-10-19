@@ -53,9 +53,31 @@ test("private upload validates image and PDF signatures",()=>{
   assert.equal(validFilePrefix("image/png",Buffer.from("not a PNG")),false);
   assert.equal(validFilePrefix("image/jpeg",Buffer.from([255,216,255])),true);
 });
-test("Vercel API proxy fails clearly before backend configuration",async()=>{
+test("Vercel API proxy defaults to the verified Render service when BACKEND_URL is absent",async()=>{
+  const originalFetch=global.fetch;
+  const saved=process.env.BACKEND_URL;
   delete process.env.BACKEND_URL;
-  assert.equal((await handler(new Request("https://frontend.example.invalid/api/school/me"))).status,503);
+  global.fetch=async input=>{
+    assert.equal(String(input),"https://go-course-ze56.onrender.com/api/school/records/languages");
+    return Response.json([{id:1,title:"الإنجليزية"}]);
+  };
+  try{
+    const response=await handler(new Request("https://frontend.example.invalid/api/school/records/languages"));
+    assert.equal(response.status,200);
+    assert.deepEqual(await response.json(),[{id:1,title:"الإنجليزية"}]);
+  }finally{
+    global.fetch=originalFetch;
+    if(saved===undefined)delete process.env.BACKEND_URL;else process.env.BACKEND_URL=saved;
+  }
+});
+test("Vercel API proxy rejects an invalid backend override instead of silently changing databases",async()=>{
+  const saved=process.env.BACKEND_URL;
+  try{
+    process.env.BACKEND_URL="https://example.invalid/api";
+    assert.equal((await handler(new Request("https://frontend.example.invalid/api/school/me"))).status,503);
+  }finally{
+    if(saved===undefined)delete process.env.BACKEND_URL;else process.env.BACKEND_URL=saved;
+  }
 });
 test("Vercel API proxy preserves auth, query, body, and private response headers",async()=>{
   process.env.BACKEND_URL="https://backend.example.invalid";

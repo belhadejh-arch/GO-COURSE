@@ -12,6 +12,7 @@ Arabic RTL language-school web platform with a public catalog and permission-sco
 - Weekly frequency is 2–7, independent of total lessons (16 by default).
 - A student can have multiple academic enrollments; never model one language/level as the whole student's academic identity.
 - Deployment target: backend on Render, frontend on Vercel, all platform data on Neon. The user will put DATABASE_URL and other secrets in Render.
+- The user confirmed `https://go-course-ze56.onrender.com` as the production API. The Vercel bridge uses it by default, with `BACKEND_URL` taking precedence. **Why:** this public origin is safe to commit, and missing an optional Vercel setting must not disconnect the frontend from the already-running database-backed service.
 
 ## Run & Operate
 
