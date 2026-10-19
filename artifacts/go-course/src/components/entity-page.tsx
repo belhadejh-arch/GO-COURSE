@@ -203,9 +203,6 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
                         {entity === 'students' && ['enrollments', 'attendance', 'payments'].map((e) => (
                           <Link key={e} href={`/${e}?studentId=${r.id}`} className="rounded-md bg-secondary px-2 py-1 text-[11px] font-semibold" data-testid={`link-student-${e}-${r.id}`}>{ENTITIES[e].plural}</Link>
                         ))}
-                        {(entity === 'students' || entity === 'teachers') && staff && writable && (
-                          <Button size="icon" variant="ghost" className="h-8 w-8" title="إعادة إرسال الدعوة" disabled={update.isPending} onClick={() => quick(r, r.status, { resendInvite: true })} data-testid={`button-resend-${r.id}`}><MailPlus className="h-4 w-4" /></Button>
-                        )}
                         {entity === 'invoices' && (
                           <Link href={`/invoices/${r.id}`} className="inline-flex h-8 items-center gap-1 rounded-lg bg-secondary px-2.5 text-xs font-semibold" data-testid={`link-print-${r.id}`}><Printer className="h-3.5 w-3.5" />عرض وطباعة</Link>
                         )}
@@ -237,7 +234,7 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
         </div>
       )}
 
-      <RecordDialog cfg={cfg} open={open} onClose={() => setOpen(false)} record={editing} lookup={lookup} role={role} readOnly={!!editing && !rowWritable(editing)} />
+      <RecordDialog cfg={cfg} open={open} onClose={() => setOpen(false)} record={editing} lookup={lookup} role={role} defaults={studentParam?{studentId:studentParam}:undefined} readOnly={!!editing && !rowWritable(editing)} />
 
       <AlertDialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
         <AlertDialogContent dir="rtl">

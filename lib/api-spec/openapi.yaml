@@ -6,6 +6,77 @@ info:
 servers:
   - url: /api
 paths:
+  /auth/session:
+    get:
+      operationId: getAuthSession
+      tags: [school]
+      responses:
+        "200":
+          description: Current native session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthSession" }
+  /auth/login:
+    post:
+      operationId: loginSchoolAccount
+      tags: [school]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthLoginInput" }
+      responses:
+        "200":
+          description: Authenticated session, cookie is HttpOnly
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthSession" }
+  /auth/logout:
+    post:
+      operationId: logoutSchoolAccount
+      tags: [school]
+      responses:
+        "200":
+          description: Session revoked
+          content:
+            application/json:
+              schema: { type: object, required: [ok], properties: { ok: { type: boolean } } }
+  /auth/password:
+    post:
+      operationId: changeSchoolPassword
+      tags: [school]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthPasswordInput" }
+      responses:
+        "200":
+          description: Password changed and other sessions revoked
+          content:
+            application/json:
+              schema: { type: object, required: [ok], properties: { ok: { type: boolean } } }
+  /auth/accounts/{id}/password:
+    post:
+      operationId: resetSchoolPassword
+      tags: [school]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthResetInput" }
+      responses:
+        "200":
+          description: Administrator-only one-time credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [email, password]
+                properties:
+                  email: { type: string }
+                  password: { type: string }
   /healthz:
     get:
       operationId: healthCheck
@@ -149,6 +220,40 @@ paths:
               schema: { type: string }
 components:
   schemas:
+    AuthLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    AuthPasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string, minLength: 12, maxLength: 128 }
+    AuthResetInput:
+      type: object
+      properties:
+        password: { type: string, minLength: 12, maxLength: 128 }
+    AuthUser:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+    AuthSession:
+      type: object
+      required: [signedIn, mustChangePassword]
+      properties:
+        signedIn: { type: boolean }
+        mustChangePassword: { type: boolean }
+        user:
+          anyOf:
+            - { $ref: "#/components/schemas/AuthUser" }
+            - { type: "null" }
     HealthStatus:
       type: object
       required: [status]

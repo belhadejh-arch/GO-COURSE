@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { useAuth, useClerk } from '@clerk/react';
+import { useNativeAuth } from '@/lib/native-auth';
 import {
   Bell, BookOpen, CalendarDays, ClipboardList, FileBarChart, FileCheck2, GraduationCap, Languages, Layers, LayoutDashboard,
   Library, LogOut, Menu, Presentation, Receipt, Repeat, Settings, ShieldAlert, Tags, UserCheck, UserPlus, Users, UsersRound, Wallet, X,
@@ -127,8 +127,8 @@ function NavList({ role, onNavigate }: { role: Role; onNavigate?: () => void }) 
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { me, role, isLoading } = useMe();
-  const { isLoaded, isSignedIn } = useAuth();
-  const { signOut } = useClerk();
+  const { session, logout } = useNativeAuth();
+  const isLoaded=session.loaded,isSignedIn=session.signedIn;
   const [open, setOpen] = useState(false);
   const notes = useListSchoolRecords('notifications', { query: { enabled: !!isSignedIn, queryKey: getListSchoolRecordsQueryKey('notifications') } });
   const unread = (notes.data ?? []).filter((n) => !n.data.read && n.status !== 'archived').length;
@@ -168,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Bell className="h-5 w-5" />
               {unread > 0 && <span className="absolute -top-0.5 -end-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground" data-testid="badge-unread">{unread}</span>}
             </Link>
-            <Button variant="outline" size="sm" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out"><LogOut className="ms-1.5 h-4 w-4" />خروج</Button>
+            <Button variant="outline" size="sm" onClick={() => {void logout().then(()=>window.location.assign(base||'/'));}} data-testid="button-sign-out"><LogOut className="ms-1.5 h-4 w-4" />خروج</Button>
           </div>
         </header>
         <main className="mx-auto max-w-7xl p-4 sm:p-6">

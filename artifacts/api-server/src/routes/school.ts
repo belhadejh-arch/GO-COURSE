@@ -81,6 +81,7 @@ async function checkFiles(a:Awaited<ReturnType<typeof access>>,data:Record<strin
 }
 router.post("/school/records/:entity",async(req,res)=>{
   const entity=entityOf(req.params.entity),a=await access(req);
+  if(["students","teachers"].includes(entity)&&a.user?.role!=="admin")fail(403,"إنشاء الحسابات متاح للمدير فقط.");
   const parsed=CreateSchoolRecordBody.safeParse(req.body);
   if (!parsed.success) fail(400,"اسم السجل والبيانات مطلوبة.");
   if (["invoices","audit","notifications"].includes(entity)) fail(403,"هذه السجلات تُنشأ تلقائيًا فقط.");
@@ -90,7 +91,6 @@ router.post("/school/records/:entity",async(req,res)=>{
   if (a.user?.role==="student") status=entity==="progress"?"completed":"pending";
   if (entity==="payments" && status!=="pending") fail(400,"أنشئ طلب الدفع أولًا ثم راجعه.");
   const data=validateData(a,entity,raw);
-  if (entity==="students" && (!Array.isArray(data.initialEnrollments) || data.initialEnrollments.length===0)) fail(400,"أضف تسجيلًا أكاديميًا واحدًا على الأقل عند إنشاء الطالب.");
   if (entity==="submissions" && a.user?.role==="student") status=data.requiresReview?"submitted":"graded";
   validateStatus(entity,status);
   await checkFiles(a,data);
@@ -99,6 +99,7 @@ router.post("/school/records/:entity",async(req,res)=>{
 });
 router.patch("/school/records/:entity/:id",async(req,res)=>{
   const entity=entityOf(req.params.entity),a=await access(req);
+  if(["students","teachers"].includes(entity)&&a.user?.role!=="admin")fail(403,"تعديل الحسابات متاح للمدير فقط.");
   const id=numberId(req.params.id);
   const row=a.rows.find(r=>r.id===id && r.entity===entity);
   if (!row || !canRead(a,row)) fail(404,"السجل غير موجود.");

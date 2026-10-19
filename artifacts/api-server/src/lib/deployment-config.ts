@@ -28,10 +28,9 @@ export function checkDeploymentConfig():void {
   if(!process.env.DATABASE_URL?.trim()&&!process.env.DATABASE_MIGRATION_URL?.trim()) {
     throw new Error("Missing Render setting: DATABASE_URL (or DATABASE_MIGRATION_URL as a fallback)");
   }
-  for(const name of ["CLERK_PUBLISHABLE_KEY","CLERK_SECRET_KEY","FRONTEND_URL","PUBLIC_API_URL","OWNER_EMAIL"]) {
+  for(const name of ["FRONTEND_URL","PUBLIC_API_URL"]) {
     if(!process.env[name]?.trim())throw new Error(`Missing Render setting: ${name}`);
   }
-  if(process.env.AUTH_MODE!=="external")throw new Error("Render requires AUTH_MODE=external and your external Clerk application keys.");
   if(process.env.FILE_STORAGE_PROVIDER!=="database")throw new Error("Render requires FILE_STORAGE_PROVIDER=database; Replit App Storage credentials do not work on Render.");
   getPublicApiOrigin();
   if(!getAllowedOrigins().length)throw new Error("FRONTEND_URL must contain at least one frontend domain.");

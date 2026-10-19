@@ -12,6 +12,23 @@ export const schoolUsers = pgTable("school_users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [check("school_user_role", sql`${t.role} in ('admin','staff','teacher','student')`)]);
 
+export const schoolCredentials = pgTable("school_credentials", {
+  userId: text("user_id").primaryKey().references(() => schoolUsers.id),
+  passwordHash: text("password_hash").notNull(),
+  mustChangePassword: boolean("must_change_password").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+export const schoolSessions = pgTable("school_sessions", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: text("user_id").notNull().references(() => schoolUsers.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, t => [index("school_sessions_user").on(t.userId), index("school_sessions_expiry").on(t.expiresAt)]);
+export const schoolLoginLimits = pgTable("school_login_limits", {
+  key: text("key").primaryKey(),
+  attempts: integer("attempts").notNull().default(1),
+  resetsAt: timestamp("resets_at", { withTimezone: true }).notNull(),
+});
+
 // Domain documents retain extensible educational content; all relationships are
 // also materialized as foreign-key-protected links below, not isolated JSON IDs.
 export const schoolRecords = pgTable("school_records", {

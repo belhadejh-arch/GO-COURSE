@@ -10,7 +10,7 @@ export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const lv: Opt[] = LEVELS.map((l) => ({ value: l, label: l }));
 
 export type FieldType =
-  | 'text' | 'textarea' | 'number' | 'date' | 'datetime' | 'email' | 'url' | 'time'
+  | 'text' | 'textarea' | 'number' | 'date' | 'datetime' | 'email' | 'url' | 'time' | 'password'
   | 'select' | 'rel' | 'relmulti' | 'chips' | 'days' | 'file' | 'questions' | 'answers' | 'langlevels' | 'enrollments' | 'account';
 
 export interface Field {
@@ -73,17 +73,29 @@ export const STATUS_LABEL: Record<string, string> = {
 const so = (...v: string[]): Opt[] => v.map((x) => ({ value: x, label: STATUS_LABEL[x] ?? x }));
 
 const courseTypes: Opt[] = [
-  { value: 'level', label: 'دورة مستوى' }, { value: 'conversation', label: 'دورة محادثة' }, { value: 'exam', label: 'تحضير اختبار' },
+  { value: 'level', label: 'تحسين المستوى' }, { value: 'conversation', label: 'محادثة' }, { value: 'exam', label: 'التحضير للامتحانات الدولية' },
 ];
 const systems: Opt[] = [{ value: 'regular', label: 'عادي' }, { value: 'intensive', label: 'مكثّف' }];
+const studyModes: Opt[] = [{ value: 'individual', label: 'فردي' }, { value: 'group', label: 'مع المجموعة' }];
 const person = (isTeacher: boolean): Field[] => [
   { key: 'firstName', label: 'الاسم', type: 'text', required: true },
   { key: 'lastName', label: 'اللقب', type: 'text', required: true },
-  { key: 'email', label: 'البريد الإلكتروني', type: 'email', required: true, hint: 'تُرسل دعوة آمنة إلى هذا البريد لإنشاء كلمة المرور.' },
+  { key: 'email', label: 'بريد الدخول', type: 'email', required: true, hint: 'يسلّم المدير هذا البريد وكلمة المرور المؤقتة لصاحب الحساب.' },
+  { key: 'loginPassword', label: 'كلمة مرور مؤقتة', type: 'password', required: true, hideFor: ['teacher','student','staff'], hint: '12 حرفًا على الأقل. مطلوبة للحساب الجديد؛ اتركها فارغة عند التعديل للاحتفاظ بالكلمة الحالية.' },
   { key: 'phone', label: 'الهاتف', type: 'text', required: true },
-  { key: 'languageIds', label: isTeacher ? 'اللغات التي يدرّسها' : 'اللغات', type: 'relmulti', entity: 'languages', wide: true, required: true },
-  { key: 'levels', label: isTeacher ? 'المستويات المشتركة (احتياطي)' : 'المستويات', type: 'chips', options: lv, wide: true },
-  ...(isTeacher ? [{ key: 'languageLevels', label: 'المستويات لكل لغة', type: 'langlevels' as const, wide: true, hint: 'حدّد مستويات كل لغة يدرّسها الأستاذ.' }] : [{ key: 'initialEnrollments', label: 'التسجيل الأكاديمي الأول', type: 'enrollments' as const, wide: true, required: true, hint: 'أضف تسجيلًا واحدًا على الأقل؛ يُنشأ الملف والتسجيلات معًا أو يُرفض الكل.' }]),
+  ...(isTeacher ? [
+    { key: 'languageIds', label: 'اللغات التي يدرّسها', type: 'relmulti' as const, entity: 'languages', wide: true, required: true },
+    { key: 'levels', label: 'المستويات المشتركة', type: 'chips' as const, options: lv, wide: true },
+    { key: 'languageLevels', label: 'المستويات لكل لغة', type: 'langlevels' as const, wide: true, hint: 'حدّد مستويات كل لغة يدرّسها الأستاذ.' },
+  ] : [
+    { key: 'studyMode', label: 'نظام الدراسة', type: 'select' as const, options: studyModes, def: 'group', required: true },
+    { key: 'studySystem', label: 'نوع النظام', type: 'select' as const, options: systems, def: 'regular', required: true },
+    { key: 'courseType', label: 'نوع الدورة', type: 'select' as const, options: courseTypes, def: 'level', required: true },
+    { key: 'languageId', label: 'اللغة', type: 'rel' as const, entity: 'languages', required: true },
+    { key: 'level', label: 'المستوى', type: 'select' as const, options: lv, required: true },
+    { key: 'examName', label: 'اسم الامتحان الدولي', type: 'text' as const, required: true, showIf: (d: Data) => d.courseType === 'exam' },
+    { key: 'proofPath', label: 'وصل الدفع', type: 'file' as const, accept: 'image/jpeg,image/png,image/webp,application/pdf', required: true },
+  ]),
   { key: 'photoPath', label: 'الصورة الشخصية', type: 'file', accept: 'image/*' },
   { key: 'notes', label: 'ملاحظات', type: 'textarea', wide: true },
 ];
@@ -105,31 +117,33 @@ export const ENTITIES: Record<string, EntityConfig> = {
     key: 'students', plural: 'الطلاب', singular: 'طالب', titleLabel: 'الاسم الكامل', hideTitle: true, autoTitle: fullName,
     statuses: so('active', 'invited', 'disabled'), fields: person(false),
     columns: [{ label: 'البريد', key: 'email' }, { label: 'الهاتف', key: 'phone' }, { label: 'اللغات', key: 'languageIds', kind: 'relmulti', entity: 'languages' }],
-    write: ADMIN, related: ['languages', 'courses', 'teachers', 'groups', 'plans'], hint: 'ملفات الطلاب وتسجيلاتهم.',
+    write: ['admin'], related: ['languages', 'courses', 'teachers', 'groups', 'plans'], hint: 'أنشئ الطالب وحسابه، ثم أضفه إلى أي دورة من التسجيلات أو من استمارة الدورة.',
   },
   teachers: {
     key: 'teachers', plural: 'الأساتذة', singular: 'أستاذ', titleLabel: 'الاسم الكامل', hideTitle: true, autoTitle: fullName,
     statuses: so('active', 'invited', 'disabled'), fields: person(true),
     columns: [{ label: 'البريد', key: 'email' }, { label: 'الهاتف', key: 'phone' }, { label: 'اللغات', key: 'languageIds', kind: 'relmulti', entity: 'languages' }],
-    write: ADMIN, related: ['languages'], hint: 'هيئة التدريس واللغات التي يغطّيها كل أستاذ.',
+    write: ['admin'], related: ['languages'], hint: 'هيئة التدريس وحسابات الدخول واللغات التي يغطّيها كل أستاذ.',
   },
   courses: {
-    key: 'courses', plural: 'الدورات', singular: 'دورة', titleLabel: 'عنوان الدورة', statuses: so('draft', 'published', 'paused'),
+    key: 'courses', plural: 'الدورات', singular: 'دورة', titleLabel: 'عنوان الدورة', statuses: so('published', 'draft', 'paused'),
     fields: [
+      { key: 'studyMode', label: 'نظام الدراسة', type: 'select', options: studyModes, def: 'group', required: true },
+      { key: 'studySystem', label: 'نوع النظام', type: 'select', options: systems, def: 'regular', required: true },
       { key: 'languageId', label: 'اللغة', type: 'rel', entity: 'languages', required: true },
       { key: 'courseType', label: 'نوع الدورة', type: 'select', options: courseTypes, required: true, def: 'level' },
       { key: 'level', label: 'المستوى', type: 'select', options: lv, required: true },
       { key: 'examName', label: 'اسم الاختبار', type: 'text', required: true, showIf: (d) => d.courseType === 'exam' },
       { key: 'targetScore', label: 'الدرجة المستهدفة', type: 'text', showIf: (d) => d.courseType === 'exam' },
       { key: 'examDate', label: 'تاريخ الاختبار', type: 'date', showIf: (d) => d.courseType === 'exam' },
-      { key: 'teacherIds', label: 'الأساتذة', type: 'relmulti', entity: 'teachers', wide: true, required: true },
-      { key: 'studySystem', label: 'نظام الدراسة', type: 'select', options: systems, def: 'regular', required: true },
+      { key: 'teacherIds', label: 'الأستاذ', type: 'relmulti', entity: 'teachers', wide: true, required: true },
+      { key: 'studentIds', label: 'الطلاب', type: 'relmulti', entity: 'students', wide: true, hint: 'يُنشأ التسجيل تلقائيًا للطلاب المختارين. الدورة الفردية تقبل طالبًا واحدًا.' },
       { key: 'weeklySessions', label: 'الحصص الأسبوعية (2-7)', type: 'number', min: 2, max: 7, def: 2, required: true },
       { key: 'totalSessions', label: 'إجمالي الحصص (تُنشأ دروسها تلقائيًا)', type: 'number', min: 1, def: 16, required: true },
       { key: 'startDate', label: 'تاريخ البداية', type: 'date', required: true },
       { key: 'endDate', label: 'تاريخ النهاية', type: 'date' },
-      { key: 'days', label: 'أيام الدراسة', type: 'days', wide: true, hint: 'عند تحديد الأيام والوقت تُجدوَل الحصص تلقائيًا.' },
-      { key: 'time', label: 'الوقت', type: 'time' },
+      { key: 'days', label: 'أيام الدراسة', type: 'days', wide: true, required: true, hint: 'يجب أن يساوي عدد الأيام عدد الحصص الأسبوعية.' },
+      { key: 'time', label: 'الوقت', type: 'time', required: true },
       { key: 'durationMinutes', label: 'مدة الحصة (دقيقة)', type: 'number', min: 15 },
       { key: 'planId', label: 'الباقة', type: 'rel', entity: 'plans' },
       { key: 'description', label: 'الوصف', type: 'textarea', wide: true },
@@ -142,7 +156,7 @@ export const ENTITIES: Record<string, EntityConfig> = {
       { label: 'نشر', status: 'published', from: ['draft', 'paused'], roles: ADMIN },
       { label: 'إيقاف', status: 'paused', from: ['published'], roles: ADMIN },
     ],
-    write: ADMIN, related: ['languages', 'teachers', 'plans'], hint: 'كتالوج الدورات وجداولها.',
+    write: ADMIN, related: ['languages', 'levels', 'teachers', 'students', 'plans'], hint: 'إنشاء الدورة وإسناد الأستاذ وتسجيل الطلاب في عملية مترابطة.',
   },
   enrollments: {
     key: 'enrollments', plural: 'التسجيلات', singular: 'تسجيل', titleLabel: 'عنوان التسجيل',
@@ -157,6 +171,7 @@ export const ENTITIES: Record<string, EntityConfig> = {
       { key: 'courseType', label: 'نوع الدورة', type: 'select', options: courseTypes },
       { key: 'level', label: 'المستوى', type: 'select', options: lv },
       { key: 'studySystem', label: 'نظام الدراسة', type: 'select', options: systems },
+      { key: 'studyMode', label: 'نظام الدراسة (فردي/مجموعة)', type: 'select', options: studyModes },
       { key: 'weeklySessions', label: 'الحصص الأسبوعية', type: 'number', min: 2, max: 7, required: true },
       { key: 'totalSessions', label: 'إجمالي الحصص', type: 'number', def: 16 },
       { key: 'startDate', label: 'تاريخ البداية', type: 'date', required: true },

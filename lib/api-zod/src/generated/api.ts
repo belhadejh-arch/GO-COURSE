@@ -8,6 +8,74 @@
 import * as zod from 'zod';
 
 
+export const GetAuthSessionResponse = zod.object({
+  "signedIn": zod.boolean(),
+  "mustChangePassword": zod.boolean(),
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string()
+}),zod.null()]).optional()
+})
+
+
+export const LoginSchoolAccountBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string()
+})
+
+export const LoginSchoolAccountResponse = zod.object({
+  "signedIn": zod.boolean(),
+  "mustChangePassword": zod.boolean(),
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string()
+}),zod.null()]).optional()
+})
+
+
+export const LogoutSchoolAccountResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const changeSchoolPasswordBodyNewPasswordMin = 12;
+export const changeSchoolPasswordBodyNewPasswordMax = 128;
+
+
+
+export const ChangeSchoolPasswordBody = zod.object({
+  "currentPassword": zod.string(),
+  "newPassword": zod.string().min(changeSchoolPasswordBodyNewPasswordMin).max(changeSchoolPasswordBodyNewPasswordMax)
+})
+
+export const ChangeSchoolPasswordResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const ResetSchoolPasswordParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const resetSchoolPasswordBodyPasswordMin = 12;
+export const resetSchoolPasswordBodyPasswordMax = 128;
+
+
+
+export const ResetSchoolPasswordBody = zod.object({
+  "password": zod.string().min(resetSchoolPasswordBodyPasswordMin).max(resetSchoolPasswordBodyPasswordMax).optional()
+})
+
+export const ResetSchoolPasswordResponse = zod.object({
+  "email": zod.string(),
+  "password": zod.string()
+})
+
+
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
 })

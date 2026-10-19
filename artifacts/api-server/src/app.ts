@@ -3,16 +3,14 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
-import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
+import cookieParser from "cookie-parser";
+import { nativeAuthMiddleware } from "./lib/native-auth";
 import { getAllowedOrigins } from "./lib/deployment-config";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 const app: Express = express();
 app.set("trust proxy",1);
-const externalAuth=process.env.AUTH_MODE==="external";
 const allowedOrigins=getAllowedOrigins();
 
 app.use(
@@ -34,21 +32,25 @@ app.use(
     },
   }),
 );
-if(!externalAuth)app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({
   credentials:true,
   origin(origin,callback) {
-    if(!origin || allowedOrigins.includes(origin) || (!externalAuth && !allowedOrigins.length))callback(null,true);
+    if(!origin || allowedOrigins.includes(origin) || (!process.env.RENDER && !allowedOrigins.length))callback(null,true);
     else callback(Object.assign(new Error("Origin not allowed."),{status:403}));
   },
   exposedHeaders:["Content-Length","Content-Range","Accept-Ranges"],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(clerkMiddleware((req) => ({
-  publishableKey: externalAuth ? process.env.CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
-  ...(externalAuth && allowedOrigins.length?{authorizedParties:allowedOrigins}:{}),
-})));
+app.use(cookieParser());
+app.use("/api", (req,res,next)=>{
+  res.set("Cache-Control","private, no-store");
+  if(!["GET","HEAD","OPTIONS"].includes(req.method) && req.get("sec-fetch-site")==="cross-site" && !allowedOrigins.includes(req.get("origin")||"")) {
+    res.status(403).json({error:"الطلب غير مسموح من هذا الموقع."});return;
+  }
+  next();
+});
+app.use("/api", nativeAuthMiddleware);
 
 app.use("/api", router);
 app.get("/api/readyz",async(_req,res)=>{

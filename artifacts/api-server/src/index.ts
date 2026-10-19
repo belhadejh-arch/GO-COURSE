@@ -2,7 +2,10 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startSchoolReminders } from "./lib/school-reminders";
 import { checkDeploymentConfig } from "./lib/deployment-config";
+import { db } from "@workspace/db";
+import { bootstrapAdmin } from "../../../lib/db/src/bootstrap-admin";
 checkDeploymentConfig();
+await db.transaction(tx=>bootstrapAdmin(tx));
 
 const rawPort = process.env["PORT"];
 

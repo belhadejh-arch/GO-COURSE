@@ -1,9 +1,9 @@
-import { db, schoolRecords, schoolLinks, schoolUsers, teacherSpecialties, type SchoolRow } from "@workspace/db";
+import { db, schoolRecords, schoolLinks, schoolUsers, schoolCredentials, schoolSessions, teacherSpecialties, type SchoolRow } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
-import { clerkClient } from "@clerk/express";
+import { randomUUID } from "node:crypto";
+import { hashPassword } from "../../../../lib/db/src/passwords";
 import { fail, idList, numberId, type Access } from "./school-access";
 import { relationTargets, validateData } from "./school-validation";
-import { getAllowedOrigins } from "./deployment-config";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export function dedupeKey(entity:string, data:Record<string,unknown>): string | null {
@@ -18,7 +18,7 @@ export async function saveLinks(tx:Tx, row:SchoolRow) {
   await tx.delete(schoolLinks).where(eq(schoolLinks.fromId,row.id));
   const edges: {fromId:number;toId:number;kind:string}[] = [];
   for (const key of Object.keys(relationTargets)) if (numberId(row.data[key])) edges.push({fromId:row.id,toId:numberId(row.data[key]),kind:key});
-  for (const key of ["teacherIds","languageIds","courseIds"]) for (const toId of idList(row.data[key])) edges.push({fromId:row.id,toId,kind:key});
+  for (const key of ["teacherIds","studentIds","languageIds","courseIds"]) for (const toId of idList(row.data[key])) edges.push({fromId:row.id,toId,kind:key});
   if (edges.length) await tx.insert(schoolLinks).values(edges).onConflictDoNothing();
 }
 async function notify(tx:Tx, a:Access, title:string, data:Record<string,unknown>, eventKey:string) {
@@ -141,6 +141,13 @@ async function activatePayment(tx:Tx,a:Access,payment:SchoolRow) {
   if (invoice) await saveLinks(tx,invoice);
 }
 export async function persist(a:Access,entity:string,title:string,status:string,data:Record<string,unknown>,existing?:SchoolRow) {
+  const person=["students","teachers"].includes(entity);
+  const passwordHash=person&&typeof data.loginPassword==="string"&&data.loginPassword ? await hashPassword(data.loginPassword):undefined;
+  if(person&&!existing&&!passwordHash)fail(400,"حدد كلمة مرور مؤقتة للحساب (12 حرفًا على الأقل).");
+  if(person) {
+    const {loginPassword:_,...safe}=data;data=safe;
+    if(a.user?.role!=="admin")fail(403,"إنشاء وتعديل الحسابات متاح للمدير فقط.");
+  }
   return db.transaction(async tx=>{
     // School-sized write traffic is serialized so overlapping timetable checks
     // and payment activation cannot race against stale request snapshots.
@@ -189,31 +196,57 @@ export async function persist(a:Access,entity:string,title:string,status:string,
     }
     if (!existing && entity==="courses") await generateLessons(tx,a,row);
     if (existing && entity==="courses") await updateFutureSchedule(tx,a,row,existing);
+    if(entity==="courses") {
+      const selected=idList(data.studentIds);
+      const extended={...a,rows:await tx.select().from(schoolRecords)};
+      const enrolled=extended.rows.filter(r=>r.entity==="enrollments"&&r.data.courseId===row.id&&!["archived","cancelled"].includes(r.status));
+      if(data.studyMode==="individual"&&new Set([...selected,...enrolled.map(r=>numberId(r.data.studentId))]).size>1)fail(409,"الدورة الفردية لا تقبل أكثر من طالب.");
+      for(const studentId of selected) {
+        if(enrolled.some(r=>r.data.studentId===studentId))continue;
+        const student=extended.rows.find(r=>r.id===studentId&&r.entity==="students");
+        if(!student||["disabled","archived"].includes(student.status))fail(400,"الطالب غير متاح للتسجيل.");
+        const entry=validateData(extended,"enrollments",{
+          studentId,courseId:row.id,teacherId:idList(data.teacherIds)[0],languageId:data.languageId,
+          level:data.level,courseType:data.courseType,studyMode:data.studyMode,studySystem:data.studySystem,
+          weeklySessions:data.weeklySessions,totalSessions:data.totalSessions,startDate:data.startDate,
+          days:data.days,time:data.time,examName:data.examName,
+        });
+        const [registration]=await tx.insert(schoolRecords).values({entity:"enrollments",title:`${student.title} — ${row.title}`,status:"active",data:entry,ownerId:a.user!.id,dedupeKey:dedupeKey("enrollments",entry)}).returning();
+        await saveLinks(tx,registration);extended.rows.push(registration);
+        await tx.update(schoolRecords).set({data:{...student.data,languageIds:[...new Set([...idList(student.data.languageIds),numberId(data.languageId)])]}}).where(eq(schoolRecords.id,studentId));
+      }
+    }
+    if(entity==="enrollments") {
+      const courseId=numberId(data.courseId);
+      const [course]=await tx.select().from(schoolRecords).where(eq(schoolRecords.id,courseId));
+      if(course) {
+        const all=await tx.select().from(schoolRecords).where(eq(schoolRecords.entity,"enrollments"));
+        const studentIds=all.filter(r=>r.data.courseId===courseId&&!["archived","cancelled"].includes(r.status)).map(r=>numberId(r.data.studentId));
+        const updated={...course,data:{...course.data,studentIds:[...new Set(studentIds)]}};
+        await tx.update(schoolRecords).set({data:updated.data,updatedAt:new Date()}).where(eq(schoolRecords.id,courseId));
+        await saveLinks(tx,updated);
+      }
+    }
     if (entity==="lessons" && status==="published") {
       if (!String(data.body || "").trim() && !data.resourcePath) fail(400,"أضف محتوى الدرس أو ملفه قبل النشر.");
       row.data={...row.data,publishedAt:new Date().toISOString(),publishedBy:a.user!.id};
       await tx.update(schoolRecords).set({data:row.data}).where(eq(schoolRecords.id,row.id));
     }
     if (entity==="payments" && status==="confirmed") await activatePayment(tx,a,row);
-    if (["students","teachers"].includes(entity) && (!existing || data.resendInvite===true)) {
-      const email=String(data.email).toLowerCase();
-      // Profile persistence and invite outcome commit together. Never store or
-      // send a shared password, and never report invitation success on failure.
-      const matches=await clerkClient.users.getUserList({emailAddress:[email]});
-      if (!matches.data.length) {
-        try {
-          if (data.resendInvite && data.invitationId) await clerkClient.invitations.revokeInvitation(String(data.invitationId));
-          const frontend=getAllowedOrigins()[0];
-          const invitation=await clerkClient.invitations.createInvitation({emailAddress:email,publicMetadata:{schoolRole:entity==="teachers"?"teacher":"student"},ignoreExisting:false,...(frontend?{redirectUrl:`${frontend}/sign-up`}:{})});
-          row.data={...row.data,invitationId:invitation.id,invitationStatus:"sent",resendInvite:false};
-          await tx.update(schoolRecords).set({data:row.data}).where(eq(schoolRecords.id,row.id));
-        } catch { fail(502,"تعذّر إرسال الدعوة. لم تُحفظ العملية؛ راجع إعدادات البريد ثم أعد المحاولة."); }
-      } else {
-        if (existing && data.resendInvite) fail(409,"الحساب مفعّل مسبقًا؛ يمكن لصاحبه استعادة كلمة المرور من صفحة الدخول.");
-        row.data={...row.data,invitationStatus:"existing_account",resendInvite:false};
-        await tx.update(schoolRecords).set({data:row.data}).where(eq(schoolRecords.id,row.id));
-        await tx.update(schoolUsers).set({role:entity==="teachers"?"teacher":"student"}).where(and(eq(schoolUsers.email,email),eq(schoolUsers.role,"student")));
+    if(person) {
+      const email=String(data.email).toLowerCase(),oldEmail=String(existing?.data.email??email).toLowerCase();
+      if(a.rows.some(r=>["students","teachers"].includes(r.entity)&&r.id!==row.id&&String(r.data.email).toLowerCase()===email))fail(409,"البريد مستخدم لملف آخر.");
+      let [user]=await tx.select().from(schoolUsers).where(eq(schoolUsers.email,oldEmail));
+      if(user&&["admin","staff"].includes(user.role))fail(409,"لا يمكن ربط هذا الملف بحساب إداري.");
+      if(!user)[user]=await tx.insert(schoolUsers).values({id:`native_${randomUUID()}`,email,name:row.title,role:entity==="teachers"?"teacher":"student"}).returning();
+      await tx.update(schoolUsers).set({email,name:row.title,role:entity==="teachers"?"teacher":"student",enabled:!["disabled","archived"].includes(status)}).where(eq(schoolUsers.id,user.id));
+      if(passwordHash) {
+        await tx.insert(schoolCredentials).values({userId:user.id,passwordHash,mustChangePassword:true}).onConflictDoUpdate({target:schoolCredentials.userId,set:{passwordHash,mustChangePassword:true,updatedAt:new Date()}});
       }
+      if(passwordHash||["disabled","archived"].includes(status)||email!==oldEmail)await tx.delete(schoolSessions).where(eq(schoolSessions.userId,user.id));
+      row.data={...row.data,accountId:user.id};
+      delete row.data.resendInvite;delete row.data.invitationId;delete row.data.invitationStatus;
+      await tx.update(schoolRecords).set({data:row.data}).where(eq(schoolRecords.id,row.id));
     }
     if (entity==="settings" && data.userId && data.role) {
       if (a.user?.role!=="admin") fail(403,"تعديل الصلاحيات متاح للمدير الرئيسي فقط.");

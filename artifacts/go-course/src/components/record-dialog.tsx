@@ -388,7 +388,7 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
         v = qs.map((_, i) => a[i] ?? '');
         if (qs.length && (v as string[]).every((x) => !x)) { setError('أجب عن سؤال واحد على الأقل'); return; }
       } else if (typeof v === 'string') v = v.trim() === '' ? undefined : v.trim();
-      if (f.required && (v === undefined || (Array.isArray(v) && !v.length))) { setError(`الحقل مطلوب: ${f.label}`); return; }
+      if (f.required && !(f.type === 'password' && record) && (v === undefined || (Array.isArray(v) && !v.length))) { setError(`الحقل مطلوب: ${f.label}`); return; }
       if (v === undefined) { if (record && record.data[f.key] != null) out[f.key] = null; else delete out[f.key]; } else out[f.key] = v;
     }
     if (cfg.key === 'teachers' && !(Array.isArray(out.levels) && out.levels.length) && !out.languageLevels) { setError('حدّد مستويات الأستاذ لكل لغة أو المستويات المشتركة'); return; }
@@ -415,19 +415,26 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
       case 'textarea': return <textarea className="field-input" rows={3} value={str(v)} onChange={(e) => set(f.key, e.target.value)} data-testid={`input-${f.key}`} />;
       case 'select': return (
         <select className="field-input" value={str(v)} onChange={(e) => set(f.key, e.target.value)} data-testid={`select-${f.key}`}>
-          <option value="">— اختر —</option>{f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <option value="">— اختر —</option>{f.options?.filter(o=>f.key!=='level'||!data.languageId||!lookup.levels||Array.from(lookup.levels.values()).some(l=>Number(l.data.languageId)===Number(data.languageId)&&l.status==='active'&&String(l.data.code??l.title)===o.value)).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       );
       case 'rel': {
         const list = Array.from(lookup[f.entity ?? '']?.values() ?? []).filter((r) => !f.relFilter || f.relFilter(r, data));
         return (
-          <select className="field-input" value={str(v)} onChange={(e) => set(f.key, e.target.value)} data-testid={`select-${f.key}`}>
+            <select className="field-input" value={str(v)} onChange={(e) => {
+              const value=e.target.value;
+              if(f.key==='courseId'&&cfg.key==='enrollments') {
+                const course=lookup.courses?.get(Number(value));
+                if(course)setData(d=>({...d,courseId:Number(value),languageId:course.data.languageId,level:course.data.level,courseType:course.data.courseType,studyMode:course.data.studyMode,studySystem:course.data.studySystem,teacherId:nums(course.data.teacherIds)[0],weeklySessions:course.data.weeklySessions,totalSessions:course.data.totalSessions,startDate:course.data.startDate,days:course.data.days,time:course.data.time,examName:course.data.examName}));
+                else set(f.key,value);
+              }else{set(f.key,value);if(f.key==='languageId')set('level','');}
+            }} data-testid={`select-${f.key}`}>
             <option value="">— اختر —</option>{list.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
           </select>
         );
       }
       case 'relmulti': {
-        const list = Array.from(lookup[f.entity ?? '']?.values() ?? []);
+        const list = Array.from(lookup[f.entity ?? '']?.values() ?? []).filter(r=>!['disabled','archived'].includes(r.status)).sort((a,b)=>b.id-a.id);
         const sel = nums(v);
         if (!list.length) return <p className="text-xs text-muted-foreground">لا توجد سجلات متاحة بعد.</p>;
         return (
@@ -468,7 +475,7 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
         {readOnly && record ? (
           <div className="space-y-4" data-testid="record-view">
             {cfg.statuses.length > 1 && <div><span className="text-xs text-muted-foreground">الحالة: </span><span className="font-bold">{cfg.statuses.find((s) => s.value === record.status)?.label ?? record.status}</span></div>}
-            {base.map((f) => (
+            {base.filter(f=>f.type!=='password').map((f) => (
               <div key={f.key}><p className="mb-1 text-xs font-bold text-muted-foreground">{f.label}</p><div className="text-sm"><ViewValue f={f} data={record.data} lookup={lookup} role={role} /></div></div>
             ))}
             <div className="flex justify-end"><Button variant="outline" onClick={onClose} data-testid="button-cancel">إغلاق</Button></div>

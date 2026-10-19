@@ -1,7 +1,7 @@
-import { getAuth, clerkClient } from "@clerk/express";
 import type { Request } from "express";
 import { db, schoolUsers, schoolRecords, type SchoolRow, type SchoolUser } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import type { NativeRequest } from "./native-auth";
 
 export function fail(status: number, message: string): never {
   throw Object.assign(new Error(message), { status });
@@ -13,23 +13,8 @@ export const idList = (value: unknown): number[] => Array.isArray(value) ? value
 export type Access = { user: SchoolUser | null; profileId: number; rows: SchoolRow[]; courseIds: Set<number>; paidCourseIds: Set<number> };
 
 export async function identity(req: Request): Promise<SchoolUser | null> {
-  const id = getAuth(req).userId;
-  if (!id) return null;
-  let [user] = await db.select().from(schoolUsers).where(eq(schoolUsers.id, id));
-  if (!user) {
-    const clerk = await clerkClient.users.getUser(id);
-    const primary = clerk.emailAddresses.find(e => e.id === clerk.primaryEmailAddressId);
-    if (!primary || primary.verification?.status !== "verified") fail(403, "يجب تأكيد البريد الإلكتروني أولًا.");
-    const email = primary.emailAddress.toLowerCase();
-    const owner = process.env.OWNER_EMAIL?.trim().toLowerCase();
-    // The owner is explicitly configured, never selected by signup order.
-    const [profile] = await db.select().from(schoolRecords).where(inArray(schoolRecords.entity, ["students", "teachers"])).then(rows => rows.filter(r => String(r.data.email).toLowerCase() === email));
-    const role = owner && email === owner ? "admin" : profile?.entity === "teachers" ? "teacher" : "student";
-    [user] = await db.insert(schoolUsers).values({ id, email, role, name: clerk.fullName || profile?.title || email }).onConflictDoNothing().returning();
-    if (!user) [user] = await db.select().from(schoolUsers).where(eq(schoolUsers.id, id));
-  } else if (process.env.OWNER_EMAIL && user.email === process.env.OWNER_EMAIL.trim().toLowerCase() && user.role !== "admin") {
-    [user] = await db.update(schoolUsers).set({ role: "admin" }).where(eq(schoolUsers.id, id)).returning();
-  }
+  const user = (req as NativeRequest).schoolUser ?? null;
+  if(!user)return null;
   if (!user?.enabled) fail(403, "هذا الحساب معطّل. تواصل مع الإدارة.");
   return user;
 }
@@ -125,7 +110,6 @@ export function serialize(a: Access, row: SchoolRow) {
   return { id: row.id, entity: row.entity, title: row.title, status: row.status, data, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString() };
 }
 export async function adminConfigured() {
-  if (process.env.OWNER_EMAIL) return true;
   const rows = await db.select({ id: schoolUsers.id }).from(schoolUsers).where(and(eq(schoolUsers.role,"admin"),eq(schoolUsers.enabled,true))).limit(1);
   return rows.length > 0;
 }

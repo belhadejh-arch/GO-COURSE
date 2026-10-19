@@ -1,194 +1,71 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
-import { arSA } from '@clerk/localizations';
+import { type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import NotFound from '@/pages/not-found';
-import { AppShell } from '@/components/layouts';
+import { AppShell, PublicLayout } from '@/components/layouts';
 import { EntityPage } from '@/components/entity-page';
+import NotFound from '@/pages/not-found';
 import Landing from '@/pages/landing';
 import { Catalog, CourseDetail } from '@/pages/catalog';
 import Dashboard from '@/pages/dashboard';
 import SessionsPage from '@/pages/sessions';
 import { DocPage, InvoicePage, NotificationsPage, ReportsPage, SettingsPage } from '@/pages/misc';
-import { PublicLayout } from '@/components/layouts';
-import { AuthStatusContext, useAuthStatus } from '@/lib/auth-status';
-import { AuthGate } from '@/components/auth-gate';
+import NativeLoginPage from '@/pages/native-login';
+import { NativeAuthProvider, useNativeAuth } from '@/lib/native-auth';
+import { SchoolRealtime } from '@/components/school-realtime';
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, refetchInterval: 30_000 } } });
-
-const externalAuth = import.meta.env.VITE_AUTH_MODE === 'external' || window.location.hostname.endsWith('.vercel.app');
-const clerkPubKey = externalAuth ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const clerkProxyUrl = externalAuth ? undefined : import.meta.env.VITE_CLERK_PROXY_URL;
+const queryClient = new QueryClient({ defaultOptions: { queries: {
+  retry: 1, refetchOnWindowFocus: true, refetchInterval: 5000,
+} } });
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
+function PrivatePage({ children }: { children: ReactNode }) {
+  const { session } = useNativeAuth();
+  if (!session.loaded) return <PublicLayout><p className="px-4 py-20 text-center">جارٍ تحميل الحساب…</p></PublicLayout>;
+  if (!session.signedIn || session.mustChangePassword) return <NativeLoginPage />;
+  return <AppShell>{children}</AppShell>;
 }
-
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: 'clerk',
-  options: {
-    logoPlacement: 'inside' as const,
-    logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/logo-transparent.png`,
-  },
-  variables: {
-    colorPrimary: 'hsl(217 80% 55%)',
-    colorForeground: 'hsl(232 42% 17%)',
-    colorMutedForeground: 'hsl(235 18% 38%)',
-    colorDanger: 'hsl(348 72% 52%)',
-    colorBackground: 'hsl(250 80% 99.5%)',
-    colorInput: 'hsl(250 80% 99.5%)',
-    colorInputForeground: 'hsl(232 42% 17%)',
-    colorNeutral: 'hsl(247 30% 70%)',
-    fontFamily: "'Changa', system-ui, sans-serif",
-    borderRadius: '0.8rem',
-  },
-  elements: {
-    rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[hsl(250_80%_99.5%)] rounded-3xl w-[440px] max-w-full overflow-hidden shadow-2xl border border-[hsl(247_40%_90%)]',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[hsl(232_42%_17%)] font-extrabold',
-    headerSubtitle: 'text-[hsl(235_18%_38%)]',
-    socialButtonsBlockButtonText: 'text-[hsl(232_42%_17%)] font-semibold',
-    formFieldLabel: 'text-[hsl(232_42%_17%)] font-semibold',
-    footerActionLink: 'text-[hsl(217_80%_45%)] font-bold',
-    footerActionText: 'text-[hsl(235_18%_38%)]',
-    dividerText: 'text-[hsl(235_18%_38%)]',
-    identityPreviewEditButton: 'text-[hsl(217_80%_45%)]',
-    formFieldSuccessText: 'text-[hsl(217_80%_40%)]',
-    alertText: 'text-[hsl(348_72%_40%)]',
-    logoBox: 'h-28 justify-center',
-    logoImage: 'h-28 w-auto',
-    formButtonPrimary: 'bg-[hsl(217_80%_55%)] hover:bg-[hsl(217_80%_48%)] font-bold',
-    formFieldInput: 'border-[hsl(247_30%_82%)]',
-    dividerLine: 'bg-[hsl(247_40%_90%)]',
-  },
-};
-
-function AuthFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-secondary via-background to-accent/25 px-4 py-8">{children}</div>
-  );
-}
-const SignInPage = () => <AuthGate><AuthFrame><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></AuthFrame></AuthGate>;
-const SignUpPage = () => <AuthGate><AuthFrame><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></AuthFrame></AuthGate>;
-
-function HomeRedirect() {
-  const { isLoaded, isSignedIn } = useAuthStatus();
-  return isLoaded && isSignedIn ? <Redirect to="/dashboard" /> : <Landing />;
-}
-
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const qc = useQueryClient();
-  const prev = useRef<string | null | undefined>(undefined);
-  useEffect(() => {
-    const unsub = addListener(({ user }) => {
-      const id = user?.id ?? null;
-      if (prev.current !== undefined && prev.current !== id) qc.clear();
-      prev.current = id;
-    });
-    return unsub;
-  }, [addListener, qc]);
-  return null;
-}
-
-const shell = (c: ReactNode) => <AuthGate><AppShell>{c}</AppShell></AuthGate>;
+const shell = (child: ReactNode) => <PrivatePage>{child}</PrivatePage>;
 type CatalogKey = 'languages' | 'levels' | 'courses' | 'plans';
 function Adaptive({ entity }: { entity: CatalogKey }) {
-  const { isLoaded, isSignedIn } = useAuthStatus();
-  return isLoaded && isSignedIn ? shell(<EntityPage entity={entity} />) : <Catalog entity={entity} />;
+  const { session } = useNativeAuth();
+  return session.signedIn && !session.mustChangePassword
+    ? shell(<EntityPage entity={entity} />) : <Catalog entity={entity} />;
 }
-function CourseDetailRoute() {
-  const { isLoaded, isSignedIn } = useAuthStatus();
-  return isLoaded && isSignedIn ? shell(<CourseDetailInShell />) : <CourseDetail />;
+function Home() {
+  const { session } = useNativeAuth();
+  return session.signedIn ? <Redirect to={session.mustChangePassword ? '/sign-in' : '/dashboard'} /> : <Landing />;
 }
-function CourseDetailInShell() {
-  return <CourseDetail />;
+function CoursePage() {
+  const { session } = useNativeAuth();
+  return session.signedIn ? shell(<CourseDetail />) : <CourseDetail />;
 }
-
 const managed = ['students', 'teachers', 'enrollments', 'groups', 'lessons', 'resources', 'assignments', 'submissions', 'attendance', 'subscriptions', 'payments', 'invoices'];
-
-function Router() {
+function Routes() {
   const [location] = useLocation();
-  return (
-    <ErrorBoundary resetKey={location}>
-      <Switch>
-        <Route path="/" component={HomeRedirect} />
-        <Route path="/sign-in/*?" component={SignInPage} />
-        <Route path="/sign-up/*?" component={SignUpPage} />
-        <Route path="/languages">{() => <Adaptive entity="languages" />}</Route>
-        <Route path="/levels">{() => <Adaptive entity="levels" />}</Route>
-        <Route path="/courses">{() => <Adaptive entity="courses" />}</Route>
-        <Route path="/courses/:id" component={CourseDetailRoute} />
-        <Route path="/plans">{() => <Adaptive entity="plans" />}</Route>
-        <Route path="/dashboard">{() => shell(<Dashboard />)}</Route>
-        <Route path="/sessions">{() => shell(<SessionsPage />)}</Route>
-        <Route path="/notifications">{() => shell(<NotificationsPage />)}</Route>
-        <Route path="/reports">{() => shell(<ReportsPage />)}</Route>
-        <Route path="/settings">{() => shell(<SettingsPage />)}</Route>
-        <Route path="/invoices/:id">{() => shell(<InvoicePage />)}</Route>
-        {managed.map((e) => <Route key={e} path={`/${e}`}>{() => shell(<EntityPage entity={e} />)}</Route>)}
-        <Route path="/support">{() => <DocPage doc="support" />}</Route>
-        <Route path="/terms">{() => <DocPage doc="terms" />}</Route>
-        <Route path="/privacy">{() => <DocPage doc="privacy" />}</Route>
-        <Route>{() => <PublicLayout><NotFound /></PublicLayout>}</Route>
-      </Switch>
-    </ErrorBoundary>
-  );
+  return <ErrorBoundary resetKey={location}><Switch>
+    <Route path="/" component={Home} />
+    <Route path="/sign-in/*?" component={NativeLoginPage} />
+    <Route path="/sign-up/*?"><Redirect to="/sign-in" /></Route>
+    <Route path="/languages">{() => <Adaptive entity="languages" />}</Route>
+    <Route path="/levels">{() => <Adaptive entity="levels" />}</Route>
+    <Route path="/courses">{() => <Adaptive entity="courses" />}</Route>
+    <Route path="/courses/:id" component={CoursePage} />
+    <Route path="/plans">{() => <Adaptive entity="plans" />}</Route>
+    <Route path="/dashboard">{() => shell(<Dashboard />)}</Route>
+    <Route path="/sessions">{() => shell(<SessionsPage />)}</Route>
+    <Route path="/notifications">{() => shell(<NotificationsPage />)}</Route>
+    <Route path="/reports">{() => shell(<ReportsPage />)}</Route>
+    <Route path="/settings">{() => shell(<SettingsPage />)}</Route>
+    <Route path="/invoices/:id">{() => shell(<InvoicePage />)}</Route>
+    {managed.map(entity => <Route key={entity} path={`/${entity}`}>{() => shell(<EntityPage entity={entity} />)}</Route>)}
+    {(['support', 'terms', 'privacy'] as const).map(doc => <Route key={doc} path={`/${doc}`}><DocPage doc={doc} /></Route>)}
+    <Route><PublicLayout><NotFound /></PublicLayout></Route>
+  </Switch></ErrorBoundary>;
 }
-
-function ClerkSessionRoutes() {
-  const { isLoaded, isSignedIn } = useAuth();
-  return (
-    <AuthStatusContext.Provider value={{ available: true, isLoaded, isSignedIn: !!isSignedIn }}>
-      <ClerkQueryClientCacheInvalidator />
-      <Router />
-    </AuthStatusContext.Provider>
-  );
+export default function App() {
+  return <WouterRouter base={basePath}><QueryClientProvider client={queryClient}><TooltipProvider>
+    <NativeAuthProvider><SchoolRealtime /><Routes /><Toaster /></NativeAuthProvider>
+  </TooltipProvider></QueryClientProvider></WouterRouter>;
 }
-
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-  if (!clerkPubKey) return <Router />;
-  return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
-      localization={arSA}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <ClerkSessionRoutes />
-    </ClerkProvider>
-  );
-}
-
-function App() {
-  return (
-    <WouterRouter base={basePath}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <ErrorBoundary FallbackComponent={() => <Router />}>
-            <ClerkProviderWithRoutes />
-          </ErrorBoundary>
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </WouterRouter>
-  );
-}
-
-export default App;

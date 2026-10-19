@@ -7,6 +7,7 @@ const id = z.coerce.number().int().positive();
 const date = z.string().refine(v => Number.isFinite(Date.parse(v)), "التاريخ غير صالح");
 const optionalId = id.optional();
 const coreCourse = {
+  studyMode: z.enum(["individual","group"]).default("group"),
   languageId: id,
   courseType: z.enum(["level","conversation","exam"]),
   level: z.enum(["A1","A2","B1","B2","C1","C2"]),
@@ -17,7 +18,7 @@ const coreCourse = {
 const schema = {
   students: z.object({ firstName:z.string().min(1),lastName:z.string().min(1),email:z.string().email().transform(v=>v.toLowerCase()),phone:z.string().regex(/^\+?[\d ()-]{7,20}$/),languageIds:z.array(id).min(1) }).passthrough(),
   teachers: z.object({ firstName:z.string().min(1),lastName:z.string().min(1),email:z.string().email().transform(v=>v.toLowerCase()),phone:z.string().regex(/^\+?[\d ()-]{7,20}$/),languageIds:z.array(id).min(1),levels:z.array(z.enum(["A1","A2","B1","B2","C1","C2"])).default([]) }).passthrough(),
-  courses: z.object({ ...coreCourse,teacherIds:z.array(id).min(1),startDate:date,days:z.array(z.coerce.number().int().min(0).max(6)).optional(),time:z.string().optional(),durationMinutes:z.coerce.number().int().min(15).max(360).default(60) }).passthrough(),
+  courses: z.object({ ...coreCourse,teacherIds:z.array(id).min(1),studentIds:z.array(id).default([]),startDate:date,days:z.array(z.coerce.number().int().min(0).max(6)).optional(),time:z.string().optional(),durationMinutes:z.coerce.number().int().min(15).max(360).default(60) }).passthrough(),
   enrollments: z.object({ ...coreCourse,studentId:id,courseId:id,teacherId:id,startDate:date,days:z.array(z.coerce.number().int().min(0).max(6)).min(2),time:z.string().regex(/^\d{2}:\d{2}$/),planId:optionalId,groupId:optionalId }).passthrough(),
   groups:z.object({courseId:id,teacherId:id}).passthrough(),
   sessions:z.object({courseId:id,teacherId:id,startsAt:date,endsAt:date,meetingUrl:z.string().url().optional()}).passthrough(),
@@ -45,6 +46,7 @@ export function validateStatus(entity:string, status:string) {
   if (!allowed.includes(status)) fail(400,"حالة السجل غير صالحة.");
 }
 export function validateData(a: Access, entity: string, input: Record<string,unknown>, existing?: SchoolRow): Record<string,unknown> {
+  if(entity==="students"&&input.languageId)input={...input,languageIds:[...new Set([...idList(input.languageIds),numberId(input.languageId)])]};
   const selected = schema[entity as keyof typeof schema];
   const parsed = selected?.safeParse(input);
   if (parsed && !parsed.success) fail(400, parsed.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("، "));
@@ -58,7 +60,7 @@ export function validateData(a: Access, entity: string, input: Record<string,unk
     if (!related) fail(400, `المرجع ${key} غير موجود أو مؤرشف.`);
     data[key] = related.id;
   }
-  for (const [key,target] of [["teacherIds","teachers"],["languageIds","languages"],["courseIds","courses"]] as const) {
+  for (const [key,target] of [["teacherIds","teachers"],["studentIds","students"],["languageIds","languages"],["courseIds","courses"]] as const) {
     if (!Array.isArray(data[key])) continue;
     for (const relatedId of idList(data[key])) if (!a.rows.some(r => r.id === relatedId && r.entity === target && r.status !== "archived")) fail(400,`قيمة ${key} غير صالحة.`);
   }
@@ -98,7 +100,9 @@ export function validateData(a: Access, entity: string, input: Record<string,unk
     if (!idList(course.data.teacherIds).includes(numberId(data.teacherId))) fail(400,"الأستاذ غير مسند إلى هذه الدورة.");
     if (data.groupId && a.rows.find(r=>r.id===data.groupId)?.data.courseId !== data.courseId) fail(400,"المجموعة تتبع دورة أخرى.");
     if (a.rows.some(r => r.entity === entity && r.id !== existing?.id && r.status !== "archived" && r.data.studentId === data.studentId && r.data.courseId === data.courseId)) fail(409,"الطالب مسجّل في هذه الدورة مسبقًا.");
+    if(course.data.studyMode==="individual"&&a.rows.some(r=>r.entity==="enrollments"&&r.id!==existing?.id&&!["archived","cancelled"].includes(r.status)&&r.data.courseId===course.id&&r.data.studentId!==data.studentId))fail(409,"الدورة الفردية تستقبل طالبًا واحدًا فقط.");
   }
+  if(entity==="courses"&&data.studyMode==="individual"&&idList(data.studentIds).length>1)fail(400,"اختر طالبًا واحدًا فقط للدراسة الفردية.");
   if (entity === "sessions") {
     const start = Date.parse(String(data.startsAt)), end = Date.parse(String(data.endsAt));
     if (start >= end) fail(400,"وقت النهاية يجب أن يكون بعد وقت البداية.");

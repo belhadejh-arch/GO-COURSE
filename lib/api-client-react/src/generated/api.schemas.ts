@@ -5,6 +5,41 @@
  * GO COURSE school API
  * OpenAPI spec version: 1.0.0
  */
+export interface AuthLoginInput {
+  email: string;
+  password: string;
+}
+
+export interface AuthPasswordInput {
+  currentPassword: string;
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  newPassword: string;
+}
+
+export interface AuthResetInput {
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  password?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export interface AuthSession {
+  signedIn: boolean;
+  mustChangePassword: boolean;
+  user?: AuthUser | null;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -93,6 +128,19 @@ export interface UploadResult {
   uploadURL: string;
   objectPath: string;
 }
+
+export type LogoutSchoolAccount200 = {
+  ok: boolean;
+};
+
+export type ChangeSchoolPassword200 = {
+  ok: boolean;
+};
+
+export type ResetSchoolPassword200 = {
+  email: string;
+  password: string;
+};
 
 export type ExportSchoolReportParams = {
 entity: string;

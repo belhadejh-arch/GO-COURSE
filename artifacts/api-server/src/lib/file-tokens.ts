@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { getPublicApiOrigin } from "./deployment-config";
 type FileGrant={path:string;action:"upload"|"download";expires:number};
 function secret():string {
-  const value=process.env.UPLOAD_SIGNING_SECRET||process.env.CLERK_SECRET_KEY;
+  const value=process.env.UPLOAD_SIGNING_SECRET||process.env.SESSION_SECRET||process.env.CLERK_SECRET_KEY;
   if(!value)throw new Error("File signing secret is not configured.");
   return value;
 }

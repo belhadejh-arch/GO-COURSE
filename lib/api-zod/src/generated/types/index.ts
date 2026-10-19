@@ -6,9 +6,17 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './authLoginInput';
+export * from './authPasswordInput';
+export * from './authResetInput';
+export * from './authSession';
+export * from './authUser';
+export * from './changeSchoolPassword200';
 export * from './exportSchoolReportParams';
 export * from './healthStatus';
 export * from './languageCount';
+export * from './logoutSchoolAccount200';
+export * from './resetSchoolPassword200';
 export * from './schoolAccount';
 export * from './schoolIdentity';
 export * from './schoolIdentityRole';

@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { seedCatalog } from "./seed-catalog";
+import { bootstrapAdmin } from "./bootstrap-admin";
 import { migrationConnectionString } from "./migration-connection";
 const connectionString=migrationConnectionString(process.env.DATABASE_URL,process.env.DATABASE_MIGRATION_URL);
 const pool=new pg.Pool({connectionString,max:1,connectionTimeoutMillis:15000});
@@ -14,7 +15,7 @@ async function setup(){
     const db=drizzle(client);
     const folder=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../../../lib/db/migrations");
     await migrate(db,{migrationsFolder:folder});
-    await db.transaction(tx=>seedCatalog(tx));
+    await db.transaction(async tx=>{await seedCatalog(tx);await bootstrapAdmin(tx);});
     console.log("Database migrations and language catalog initialized successfully.");
   }finally{
     await client.query("select pg_advisory_unlock(740235)");
