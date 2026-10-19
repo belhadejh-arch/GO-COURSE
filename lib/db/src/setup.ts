@@ -4,9 +4,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { seedCatalog } from "./seed-catalog";
-const connectionString=process.env.DATABASE_MIGRATION_URL||process.env.DATABASE_URL;
-if(!connectionString)throw new Error("DATABASE_URL is required.");
-if(new URL(connectionString).hostname.includes("-pooler."))throw new Error("Migrations require a direct Neon connection. Set DATABASE_MIGRATION_URL to the non-pooled URL, or use a direct DATABASE_URL.");
+import { migrationConnectionString } from "./migration-connection";
+const connectionString=migrationConnectionString(process.env.DATABASE_URL,process.env.DATABASE_MIGRATION_URL);
 const pool=new pg.Pool({connectionString,max:1,connectionTimeoutMillis:15000});
 async function setup(){
   const client=await pool.connect();

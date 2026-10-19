@@ -13,7 +13,7 @@
 <li>ارفع المستودع إلى GitHub لربطه بالاستضافتين. يجب تضمين <code>pnpm-lock.yaml</code> و<code>lib/db/migrations</code> و<code>api</code> والملفين <code>render.yaml</code> و<code>vercel.json</code>.</li>
 <li>Runtime: Node.js 22، ومدير الحزم <code>pnpm 10.26.1</code> مثبت في packageManager.</li>
 <li>من Neon انسخ رابط PostgreSQL المباشر Direct مع TLS: <code>?sslmode=require</code>. يمكن استخدامه في التشغيل والترحيلات معًا.</li>
-<li>إذا استعملت رابطًا Pooled في <code>DATABASE_URL</code>، ضع الرابط المباشر كذلك في <code>DATABASE_MIGRATION_URL</code>. الترحيلات تحتاج اتصالًا ثابتًا لقفلها ومنع تشغيلها المتزامن.</li>
+<li>إذا استعملت رابط Neon من نوع Pooled في <code>DATABASE_URL</code>، تختار التهيئة تلقائيًا نظيره المباشر بحذف <code>-pooler</code> من اسم المضيف فقط؛ لا تتغير بيانات الدخول أو إعدادات TLS. يمكن تحديد اتصال بديل عبر <code>DATABASE_MIGRATION_URL</code>. الترحيلات تحتاج اتصالًا ثابتًا لقفلها ومنع تشغيلها المتزامن، بينما يستمر التشغيل العادي بالرابط الأصلي.</li>
 <li>للنشر الخارجي، استخدم تطبيق Clerk مستقل بمفاتيح مطابقة للواجهة والخادم، واضبط دومين Vercel في إعداداته. لا تُحذف إعدادات Clerk الحالية في Replit؛ تبقى للمعاينة. الحسابات وكلمات المرور القديمة لا تنتقل تلقائيًا بين تطبيقي المصادقة.</li>
 </ol>
 <h2>2. Backend على Render</h2>
@@ -27,7 +27,7 @@
 <table>
 <tr><th>متغير Render</th><th>القيمة أو المعنى</th></tr>
 <tr><td><code>DATABASE_URL</code></td><td>رابط Neon السري مع TLS. لا تضفه إلى Vercel.</td></tr>
-<tr><td><code>DATABASE_MIGRATION_URL</code></td><td>اختياري فقط إذا كان DATABASE_URL رابط Pooler؛ هنا توضع نسخة Direct من Neon.</td></tr>
+<tr><td><code>DATABASE_MIGRATION_URL</code></td><td>اختياري لتجاوز اتصال الترحيلات. رابط Neon المجمّع يُحوّل تلقائيًا إلى نظيره المباشر للتهيئة فقط.</td></tr>
 <tr><td><code>CLERK_SECRET_KEY</code></td><td>المفتاح السري لتطبيق Clerk الخارجي؛ يبقى على الخادم.</td></tr>
 <tr><td><code>CLERK_PUBLISHABLE_KEY</code></td><td>المفتاح العام لنفس تطبيق Clerk.</td></tr>
 <tr><td><code>OWNER_EMAIL</code></td><td>بريد المالك المؤكد الذي يحصل على صلاحيات المدير عند الدخول.</td></tr>
