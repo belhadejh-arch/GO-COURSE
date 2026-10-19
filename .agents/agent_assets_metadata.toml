@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "tDz0EmgJZoMu0TUglWazR"
+uri = "file://docs/implementation-report.html"
+type = "html"
+title = "GO COURSE — تقرير التنفيذ والفحص"
+description = "ما تم تنفيذه، نتائج الاختبارات، وما يحتاج إعدادًا أو اختبارًا قبل التشغيل الفعلي."
+logical_id = "105495e9-cced-4b83-bff9-f942c3ebd0b5"
+content_hash = "sha256:bce22a8f21542781b1b669332494d17f3340b99b5a5127147790789708fe7d62"
+size = 7783
+mtime_ms = 1792416376404
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:b5e8fab6-c6b4-4d3d-a5cc-b81dd697345c/105495e9-cced-4b83-bff9-f942c3ebd0b5/d07f27b7-de6c-4409-a7ff-4ed8c412f647"
+storage_version_token = "1792416450628860"
+content_type = "text/html"

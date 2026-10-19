@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "GO COURSE"
+description = "منصة عربية لإدارة مدرسة لغات، الطلاب والأساتذة والدورات والحصص والاشتراكات."
+version = "1.0.0"
+id = "artifacts/go-course"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24774
+
+[services.development]
+run = "pnpm --filter @workspace/go-course run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/go-course", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/go-course/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24774"
+BASE_PATH = "/"

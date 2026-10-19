@@ -1,36 +1,243 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 1.0.0
+  description: GO COURSE school API
 servers:
   - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
-      tags: [health]
-      summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /school/me:
+    get:
+      operationId: getSchoolMe
+      responses:
+        "200":
+          description: Current identity and capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolIdentity" }
+  /school/summary:
+    get:
+      operationId: getSchoolSummary
+      responses:
+        "200":
+          description: Real school statistics
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolSummary" }
+  /school/accounts:
+    get:
+      operationId: listSchoolAccounts
+      responses:
+        "200":
+          description: Administrator-only account directory
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: array
+                items: { $ref: "#/components/schemas/SchoolAccount" }
+  /school/records/{entity}:
+    parameters:
+      - { name: entity, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: listSchoolRecords
+      responses:
+        "200":
+          description: Records visible to the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SchoolRecord" }
+    post:
+      operationId: createSchoolRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SchoolRecordInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolRecord" }
+  /school/records/{entity}/{id}:
+    parameters:
+      - { name: entity, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: getSchoolRecord
+      responses:
+        "200":
+          description: Record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolRecord" }
+    patch:
+      operationId: updateSchoolRecord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SchoolRecordInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolRecord" }
+    delete:
+      operationId: archiveSchoolRecord
+      responses:
+        "200":
+          description: Archived without deleting historical records
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SchoolRecord" }
+  /school/notifications/read:
+    post:
+      operationId: readSchoolNotifications
+      responses:
+        "200":
+          description: All notifications marked read
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /school/storage/upload:
+    post:
+      operationId: requestSchoolUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadInput" }
+      responses:
+        "200":
+          description: Signed private upload URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+  /school/reports/export:
+    get:
+      operationId: exportSchoolReport
+      parameters:
+        - { name: entity, in: query, required: true, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: languageId, in: query, schema: { type: integer } }
+        - { name: teacherId, in: query, schema: { type: integer } }
+        - { name: courseId, in: query, schema: { type: integer } }
+        - { name: level, in: query, schema: { type: string } }
+        - { name: studySystem, in: query, schema: { type: string } }
+        - { name: courseType, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: CSV report
+          content:
+            text/csv:
+              schema: { type: string }
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        status: { type: string }
+    SchoolIdentity:
+      type: object
+      required: [signedIn, role, name, adminConfigured]
+      properties:
+        signedIn: { type: boolean }
+        role: { type: string, enum: [guest, admin, staff, teacher, student] }
+        id: { type: string }
+        profileId: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        adminConfigured: { type: boolean }
+        permissions:
+          type: array
+          items: { type: string }
+    SchoolAccount:
+      type: object
+      required: [id, name, email, role, permissions, enabled]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        permissions:
+          type: array
+          items: { type: string }
+        enabled: { type: boolean }
+    SchoolSummary:
+      type: object
+      required: [students, teachers, courses, activeSubscriptions, revenue, currency, upcomingSessions, activity, languageCounts]
+      properties:
+        students: { type: integer }
+        teachers: { type: integer }
+        courses: { type: integer }
+        activeSubscriptions: { type: integer }
+        revenue: { type: number }
+        currency: { type: string }
+        upcomingSessions:
+          type: array
+          items: { $ref: "#/components/schemas/SchoolRecord" }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/SchoolRecord" }
+        languageCounts:
+          type: array
+          items: { $ref: "#/components/schemas/LanguageCount" }
+    LanguageCount:
+      type: object
+      required: [name, count]
+      properties:
+        name: { type: string }
+        count: { type: integer }
+    SchoolRecordInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1 }
+        status: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+    SchoolRecord:
+      type: object
+      required: [id, entity, title, status, data, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        entity: { type: string }
+        title: { type: string }
+        status: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    UploadInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string }
+        size: { type: integer, minimum: 1, maximum: 52428800 }
+        contentType: { type: string }
+        courseId: { type: integer }
+    UploadResult:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string }
+        objectPath: { type: string }
