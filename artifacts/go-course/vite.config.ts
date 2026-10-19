@@ -20,7 +20,7 @@ export default defineConfig({
   define: {
     'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(process.env.VITE_CLERK_PUBLISHABLE_KEY ?? process.env.CLERK_PUBLISHABLE_KEY ?? ''),
     'import.meta.env.VITE_CLERK_PROXY_URL': JSON.stringify(process.env.VITE_CLERK_PROXY_URL ?? process.env.CLERK_PROXY_URL ?? ''),
-    'import.meta.env.VITE_AUTH_MODE': JSON.stringify(process.env.VITE_AUTH_MODE ?? 'replit'),
+    'import.meta.env.VITE_AUTH_MODE': JSON.stringify(process.env.VITE_AUTH_MODE ?? (process.env.VERCEL ? 'external' : 'replit')),
   },
   plugins: [
     react(),

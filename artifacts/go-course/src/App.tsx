@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { arSA } from '@clerk/localizations';
@@ -17,20 +17,18 @@ import Dashboard from '@/pages/dashboard';
 import SessionsPage from '@/pages/sessions';
 import { DocPage, InvoicePage, NotificationsPage, ReportsPage, SettingsPage } from '@/pages/misc';
 import { PublicLayout } from '@/components/layouts';
+import { AuthStatusContext, useAuthStatus } from '@/lib/auth-status';
+import { AuthGate } from '@/components/auth-gate';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, refetchInterval: 30_000 } } });
 
-const externalAuth = import.meta.env.VITE_AUTH_MODE === 'external';
+const externalAuth = import.meta.env.VITE_AUTH_MODE === 'external' || window.location.hostname.endsWith('.vercel.app');
 const clerkPubKey = externalAuth ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = externalAuth ? undefined : import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
-}
-
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
 }
 
 const clerkAppearance = {
@@ -81,16 +79,12 @@ function AuthFrame({ children }: { children: ReactNode }) {
     <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-secondary via-background to-accent/25 px-4 py-8">{children}</div>
   );
 }
-const SignInPage = () => <AuthFrame><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></AuthFrame>;
-const SignUpPage = () => <AuthFrame><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></AuthFrame>;
+const SignInPage = () => <AuthGate><AuthFrame><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></AuthFrame></AuthGate>;
+const SignUpPage = () => <AuthGate><AuthFrame><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></AuthFrame></AuthGate>;
 
 function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in"><Redirect to="/dashboard" /></Show>
-      <Show when="signed-out"><Landing /></Show>
-    </>
-  );
+  const { isLoaded, isSignedIn } = useAuthStatus();
+  return isLoaded && isSignedIn ? <Redirect to="/dashboard" /> : <Landing />;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -108,23 +102,15 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-const shell = (c: ReactNode) => <AppShell>{c}</AppShell>;
+const shell = (c: ReactNode) => <AuthGate><AppShell>{c}</AppShell></AuthGate>;
 type CatalogKey = 'languages' | 'levels' | 'courses' | 'plans';
 function Adaptive({ entity }: { entity: CatalogKey }) {
-  return (
-    <>
-      <Show when="signed-in">{shell(<EntityPage entity={entity} />)}</Show>
-      <Show when="signed-out"><Catalog entity={entity} /></Show>
-    </>
-  );
+  const { isLoaded, isSignedIn } = useAuthStatus();
+  return isLoaded && isSignedIn ? shell(<EntityPage entity={entity} />) : <Catalog entity={entity} />;
 }
 function CourseDetailRoute() {
-  return (
-    <>
-      <Show when="signed-in">{shell(<CourseDetailInShell />)}</Show>
-      <Show when="signed-out"><CourseDetail /></Show>
-    </>
-  );
+  const { isLoaded, isSignedIn } = useAuthStatus();
+  return isLoaded && isSignedIn ? shell(<CourseDetailInShell />) : <CourseDetail />;
 }
 function CourseDetailInShell() {
   return <CourseDetail />;
@@ -161,8 +147,19 @@ function Router() {
   );
 }
 
+function ClerkSessionRoutes() {
+  const { isLoaded, isSignedIn } = useAuth();
+  return (
+    <AuthStatusContext.Provider value={{ available: true, isLoaded, isSignedIn: !!isSignedIn }}>
+      <ClerkQueryClientCacheInvalidator />
+      <Router />
+    </AuthStatusContext.Provider>
+  );
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  if (!clerkPubKey) return <Router />;
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
@@ -174,13 +171,7 @@ function ClerkProviderWithRoutes() {
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <ClerkQueryClientCacheInvalidator />
-          <Router />
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <ClerkSessionRoutes />
     </ClerkProvider>
   );
 }
@@ -188,7 +179,14 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ErrorBoundary FallbackComponent={() => <Router />}>
+            <ClerkProviderWithRoutes />
+          </ErrorBoundary>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
     </WouterRouter>
   );
 }

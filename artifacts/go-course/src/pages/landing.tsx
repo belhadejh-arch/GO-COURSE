@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpenCheck, CalendarCheck, ClipboardCheck, Presentation, 
 import { useListSchoolRecords } from '@workspace/api-client-react';
 import { PublicLayout } from '@/components/layouts';
 import { LEVELS } from '@/lib/school';
+import { ErrorState, ListSkeleton } from '@/components/common';
 
 const base = import.meta.env.BASE_URL;
 const chips = [
@@ -52,7 +53,9 @@ export default function Landing() {
           <div><h2 className="text-2xl font-extrabold sm:text-3xl">اللغات المتاحة</h2><p className="mt-1 text-sm text-muted-foreground">تُحدَّث القائمة مباشرة من كتالوج المدرسة.</p></div>
           <Link href="/languages" className="text-sm font-bold text-primary hover:underline" data-testid="link-all-languages">عرض الكل</Link>
         </div>
-        {shown.length ? (
+        {langs.isLoading ? <ListSkeleton rows={2} /> : langs.isError ? (
+          <ErrorState message="تعذّر الاتصال بكتالوج المدرسة. تحقق من إعداد BACKEND_URL في Vercel ومن تشغيل خدمة Render." onRetry={() => langs.refetch()} />
+        ) : shown.length ? (
           <div className="flex flex-wrap gap-3">
             {shown.map((l, i) => (
               <motion.div key={l.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 8) * 0.04 }}

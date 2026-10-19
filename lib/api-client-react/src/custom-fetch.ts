@@ -367,5 +367,21 @@ export async function customFetch<T = unknown>(
     throw new ApiError(response, errorData, requestInfo);
   }
 
+  // A misconfigured SPA host can return index.html with HTTP 200 for /api.
+  // Do not cache that HTML as a successful typed API result.
+  const mediaType = getMediaType(response.headers);
+  if (
+    responseType === "auto" &&
+    (mediaType === "text/html" || mediaType === "application/xhtml+xml") &&
+    /\/api(?:\/|$)/.test(new URL(requestInfo.url, "https://relative.invalid").pathname)
+  ) {
+    throw new ResponseParseError(
+      response,
+      await response.text(),
+      new Error("API returned an HTML page. Check the backend proxy configuration."),
+      requestInfo,
+    );
+  }
+
   return (await parseSuccessBody(response, responseType, requestInfo)) as T;
 }

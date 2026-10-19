@@ -12,6 +12,7 @@ import { SignInPrompt } from '@/components/common';
 import { useMe, useAccess } from '@/hooks/use-school';
 import { NAV } from '@/lib/school';
 import type { Role } from '@/lib/school';
+import { useAuthStatus } from '@/lib/auth-status';
 
 const base = import.meta.env.BASE_URL;
 const ICONS: Record<string, LucideIcon> = {
@@ -31,7 +32,7 @@ export function LogoMark({ s = 40 }: { s?: number }) {
 }
 
 export function PublicLayout({ children }: { children: ReactNode }) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthStatus();
   const [open, setOpen] = useState(false);
   const [loc] = useLocation();
   const links = [
