@@ -51,7 +51,7 @@ router.get("/school/summary",async(req,res)=>{
 router.get("/school/records/:entity",async(req,res)=>{
   const entity=entityOf(req.params.entity),a=await access(req);
   if (!a.user && !catalog.has(entity)) fail(401,"سجّل الدخول لعرض هذا القسم.");
-  const result=a.rows.filter(r=>r.entity===entity && canRead(a,r)).sort((x,y)=>x.id-y.id).map(r=>serialize(a,r));
+  const result=a.rows.filter(r=>r.entity===entity && canRead(a,r)).sort((x,y)=>y.id-x.id).map(r=>serialize(a,r));
   res.json(ListSchoolRecordsResponse.parse(result));
 });
 router.get("/school/records/:entity/:id",async(req,res)=>{

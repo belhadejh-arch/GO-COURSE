@@ -11,20 +11,18 @@ services:
       - key: NODE_ENV
         value: production
       - key: AUTH_MODE
-        value: external
+        value: native
       - key: FILE_STORAGE_PROVIDER
         value: database
       - key: DB_POOL_MAX
         value: "5"
       - key: DATABASE_URL
         sync: false
-      - key: CLERK_PUBLISHABLE_KEY
+      - key: ADMIN_INITIAL_PASSWORD
         sync: false
-      - key: CLERK_SECRET_KEY
+      - key: UPLOAD_SIGNING_SECRET
         sync: false
       - key: FRONTEND_URL
         sync: false
       - key: PUBLIC_API_URL
-        sync: false
-      - key: OWNER_EMAIL
         sync: false

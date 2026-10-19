@@ -176,8 +176,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="rise mb-5 flex gap-3 rounded-2xl border border-accent/60 bg-accent/20 p-4" data-testid="banner-admin-setup">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(30_70%_30%)]" />
               <div className="text-sm">
-                <p className="font-bold">لم يتم إعداد مالك المدرسة بعد</p>
-                <p className="mt-0.5 text-muted-foreground">يجب على مالك المدرسة ضبط بريده الإلكتروني في إعدادات الخادم (OWNER_EMAIL) ثم تسجيل الدخول به ليحصل على صلاحيات الإدارة. إلى ذلك الحين تعمل الحسابات الجديدة بصلاحيات الطالب.</p>
+                <p className="font-bold">حساب المدير يحتاج إلى تفعيل</p>
+                <p className="mt-0.5 text-muted-foreground">أضف ADMIN_INITIAL_PASSWORD (12 حرفًا على الأقل) إلى أسرار خدمة Render ثم أعد تشغيلها. اسم المدير ثابت: gocourse1@gmail.com. غيّر كلمة المرور المؤقتة بعد الدخول الأول.</p>
               </div>
             </div>
           )}

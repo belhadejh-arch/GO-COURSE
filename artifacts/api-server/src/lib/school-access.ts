@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { db, schoolUsers, schoolRecords, type SchoolRow, type SchoolUser } from "@workspace/db";
+import { db, schoolUsers, schoolCredentials, schoolRecords, type SchoolRow, type SchoolUser } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import type { NativeRequest } from "./native-auth";
 
@@ -110,6 +110,7 @@ export function serialize(a: Access, row: SchoolRow) {
   return { id: row.id, entity: row.entity, title: row.title, status: row.status, data, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString() };
 }
 export async function adminConfigured() {
-  const rows = await db.select({ id: schoolUsers.id }).from(schoolUsers).where(and(eq(schoolUsers.role,"admin"),eq(schoolUsers.enabled,true))).limit(1);
+  const rows = await db.select({ id: schoolUsers.id }).from(schoolUsers).innerJoin(schoolCredentials,eq(schoolCredentials.userId,schoolUsers.id))
+    .where(and(eq(schoolUsers.role,"admin"),eq(schoolUsers.enabled,true),eq(schoolCredentials.mustChangePassword,false))).limit(1);
   return rows.length > 0;
 }
