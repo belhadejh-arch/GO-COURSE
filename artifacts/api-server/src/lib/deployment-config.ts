@@ -1,9 +1,26 @@
+export function normalizeOrigin(value:string,setting:string):string {
+  const input=value.trim();
+  const invalid=()=>new Error(`${setting} must be a domain or an HTTP(S) origin without credentials, paths, query parameters, or fragments.`);
+  if(!input||/[\s\\]/.test(input))throw invalid();
+  let url:URL;
+  try {
+    url=new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(input)?input:`https://${input}`);
+  } catch {
+    throw invalid();
+  }
+  if(!["https:","http:"].includes(url.protocol)||!url.hostname||url.username||url.password||url.search||url.hash||!/^\/*$/.test(url.pathname))throw invalid();
+  return url.origin;
+}
+
 export function getAllowedOrigins():string[] {
-  return (process.env.FRONTEND_URL || "").split(",").map(v=>v.trim()).filter(Boolean).map(v=>{
-    const u=new URL(v);
-    if(!["https:","http:"].includes(u.protocol)||u.origin!==v)throw new Error("FRONTEND_URL must contain comma-separated origins without paths or trailing slashes.");
-    return u.origin;
-  });
+  return [...new Set((process.env.FRONTEND_URL || "").split(",").map(v=>v.trim()).filter(Boolean).map(v=>normalizeOrigin(v,"FRONTEND_URL")))];
+}
+
+export function getPublicApiOrigin():string {
+  if(!process.env.PUBLIC_API_URL?.trim())return "";
+  const origin=normalizeOrigin(process.env.PUBLIC_API_URL,"PUBLIC_API_URL");
+  if(!origin.startsWith("https://"))throw new Error("PUBLIC_API_URL must be the HTTPS Render backend origin.");
+  return origin;
 }
 
 export function checkDeploymentConfig():void {
@@ -12,10 +29,10 @@ export function checkDeploymentConfig():void {
     throw new Error("Missing Render setting: DATABASE_URL (or DATABASE_MIGRATION_URL as a fallback)");
   }
   for(const name of ["CLERK_PUBLISHABLE_KEY","CLERK_SECRET_KEY","FRONTEND_URL","PUBLIC_API_URL","OWNER_EMAIL"]) {
-    if(!process.env[name])throw new Error(`Missing Render setting: ${name}`);
+    if(!process.env[name]?.trim())throw new Error(`Missing Render setting: ${name}`);
   }
   if(process.env.AUTH_MODE!=="external")throw new Error("Render requires AUTH_MODE=external and your external Clerk application keys.");
   if(process.env.FILE_STORAGE_PROVIDER!=="database")throw new Error("Render requires FILE_STORAGE_PROVIDER=database; Replit App Storage credentials do not work on Render.");
-  if(new URL(process.env.PUBLIC_API_URL!).protocol!=="https:")throw new Error("PUBLIC_API_URL must be the HTTPS Render backend origin.");
-  getAllowedOrigins();
+  getPublicApiOrigin();
+  if(!getAllowedOrigins().length)throw new Error("FRONTEND_URL must contain at least one frontend domain.");
 }

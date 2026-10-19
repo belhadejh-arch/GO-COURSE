@@ -1,0 +1,55 @@
+2026-10-19T15:23:13.710401525Z ==> Deploying...
+2026-10-19T15:23:13.814884794Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-10-19T15:23:38.979166141Z ==> Running 'pnpm run start:render'
+2026-10-19T15:23:58.586482323Z 
+2026-10-19T15:23:58.586513394Z > workspace@0.0.0 start:render /opt/render/project/src
+2026-10-19T15:23:58.586524014Z > pnpm run db:setup && pnpm --filter @workspace/api-server run start
+2026-10-19T15:23:58.586528114Z 
+2026-10-19T15:24:02.590518965Z 
+2026-10-19T15:24:02.590547316Z > workspace@0.0.0 db:setup /opt/render/project/src
+2026-10-19T15:24:02.590553656Z > node --enable-source-maps artifacts/api-server/dist/setup.mjs
+2026-10-19T15:24:02.590601077Z 
+2026-10-19T15:24:03.48814981Z (node:121) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-10-19T15:24:03.48818354Z In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-10-19T15:24:03.488230081Z 
+2026-10-19T15:24:03.488236302Z To prepare for this change:
+2026-10-19T15:24:03.488241482Z - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-10-19T15:24:03.488245582Z - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-10-19T15:24:03.488249542Z 
+2026-10-19T15:24:03.488254302Z See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-10-19T15:24:03.488258262Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-19T15:24:14.533873932Z Database migrations and language catalog initialized successfully.
+2026-10-19T15:24:17.892876051Z 
+2026-10-19T15:24:17.892910082Z > @workspace/api-server@0.0.0 start /opt/render/project/src/artifacts/api-server
+2026-10-19T15:24:17.892916372Z > node --enable-source-maps ./dist/index.mjs
+2026-10-19T15:24:17.892920762Z 
+2026-10-19T15:24:19.360689508Z ==> No open ports detected, continuing to scan...
+2026-10-19T15:24:19.460700047Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-10-19T15:24:21.890727237Z DATABASE_URL is not set; using DATABASE_MIGRATION_URL for runtime database connections. Set DATABASE_URL for normal operation.
+2026-10-19T15:24:23.490608162Z node:internal/url:818
+2026-10-19T15:24:23.490637153Z       href = bindingUrl.parse(input, base, true);
+2026-10-19T15:24:23.490642453Z                         ^
+2026-10-19T15:24:23.490646353Z 
+2026-10-19T15:24:23.490650323Z TypeError: Invalid URL
+2026-10-19T15:24:23.490654883Z     at new URL (node:internal/url:818:25)
+2026-10-19T15:24:23.490659863Z     at <anonymous> (/opt/render/project/src/artifacts/api-server/src/lib/deployment-config.ts:3:13)
+2026-10-19T15:24:23.490663904Z     at Array.map (<anonymous>)
+2026-10-19T15:24:23.490668024Z     at getAllowedOrigins (/opt/render/project/src/artifacts/api-server/src/lib/deployment-config.ts:2:87)
+2026-10-19T15:24:23.490674614Z     at <anonymous> (/opt/render/project/src/artifacts/api-server/src/app.ts:16:22)
+2026-10-19T15:24:23.490679354Z     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2026-10-19T15:24:23.490683474Z     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+2026-10-19T15:24:23.490687384Z     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+2026-10-19T15:24:23.490691354Z   code: 'ERR_INVALID_URL',
+2026-10-19T15:24:23.490695364Z   input: 'go-course-lake.vercel.app'
+2026-10-19T15:24:23.490699344Z }
+2026-10-19T15:24:23.490703124Z 
+2026-10-19T15:24:23.490707105Z Node.js v22.23.3
+2026-10-19T15:24:23.779093381Z /opt/render/project/src/artifacts/api-server:
+2026-10-19T15:24:23.780040452Z  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+2026-10-19T15:24:23.780049672Z Exit status 1
+2026-10-19T15:24:23.98517515Z  ELIFECYCLE  Command failed with exit code 1.
+2026-10-19T15:24:25.907228017Z ==> Exited with status 1
+2026-10-19T15:24:25.91528975Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2026-10-19T15:24:31.840791184Z ==> Running 'pnpm run start:render'
+
+لا زال المشكل اصلحه الزاميا

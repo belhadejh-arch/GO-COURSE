@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { getPublicApiOrigin } from "./deployment-config";
 type FileGrant={path:string;action:"upload"|"download";expires:number};
 function secret():string {
   const value=process.env.UPLOAD_SIGNING_SECRET||process.env.CLERK_SECRET_KEY;
@@ -25,6 +26,6 @@ export function verifyFileToken(token:unknown,path:string,action:FileGrant["acti
 }
 export function fileTransferUrl(path:string,action:FileGrant["action"]):string {
   const id=path.split("/").at(-1);
-  const origin=(process.env.PUBLIC_API_URL||"").replace(/\/$/,"");
+  const origin=getPublicApiOrigin();
   return `${origin}/api/school/storage/transfer/${id}?action=${action}&token=${signFileToken(path,action)}`;
 }
