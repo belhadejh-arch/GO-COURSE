@@ -1,0 +1,53 @@
+2026-10-19T15:07:12.04683325Z   dist/thread-stream-worker.mjs.map   12.0kb
+2026-10-19T15:07:12.046834354Z 
+2026-10-19T15:07:12.046835968Z ⚡ Done in 510ms
+2026-10-19T15:07:13.197182094Z ==> Uploading build...
+2026-10-19T15:07:20.104343461Z ==> Uploaded in 3.8s. Compression took 3.1s
+2026-10-19T15:07:20.111282871Z ==> Build successful 🎉
+2026-10-19T15:07:21.370417066Z ==> Deploying...
+2026-10-19T15:07:21.45448411Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-10-19T15:07:46.726633697Z ==> Running 'pnpm run start:render'
+2026-10-19T15:08:08.333578603Z 
+2026-10-19T15:08:08.333611895Z > workspace@0.0.0 start:render /opt/render/project/src
+2026-10-19T15:08:08.333639827Z > pnpm run db:setup && pnpm --filter @workspace/api-server run start
+2026-10-19T15:08:08.333644997Z 
+2026-10-19T15:08:12.726813945Z 
+2026-10-19T15:08:12.726830806Z > workspace@0.0.0 db:setup /opt/render/project/src
+2026-10-19T15:08:12.726834197Z > node --enable-source-maps artifacts/api-server/dist/setup.mjs
+2026-10-19T15:08:12.726876399Z 
+2026-10-19T15:08:13.544456748Z (node:122) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-10-19T15:08:13.54448778Z In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-10-19T15:08:13.544511221Z 
+2026-10-19T15:08:13.544515762Z To prepare for this change:
+2026-10-19T15:08:13.544520162Z - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-10-19T15:08:13.544524442Z - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-10-19T15:08:13.544528492Z 
+2026-10-19T15:08:13.544533452Z See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-10-19T15:08:13.544537943Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-19T15:08:27.105169951Z ==> No open ports detected, continuing to scan...
+2026-10-19T15:08:27.263960344Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-10-19T15:08:36.14589492Z Database migrations and language catalog initialized successfully.
+2026-10-19T15:08:39.539282975Z 
+2026-10-19T15:08:39.539330607Z > @workspace/api-server@0.0.0 start /opt/render/project/src/artifacts/api-server
+2026-10-19T15:08:39.539338908Z > node --enable-source-maps ./dist/index.mjs
+2026-10-19T15:08:39.539343008Z 
+2026-10-19T15:08:46.225271551Z /opt/render/project/src/lib/db/src/index.ts:8
+2026-10-19T15:08:46.225322324Z   throw new Error(
+2026-10-19T15:08:46.225330445Z         ^
+2026-10-19T15:08:46.225334465Z 
+2026-10-19T15:08:46.225339715Z Error: DATABASE_URL must be set. Did you forget to provision a database?
+2026-10-19T15:08:46.225343866Z     at <anonymous> (/opt/render/project/src/lib/db/src/index.ts:8:9)
+2026-10-19T15:08:46.225348006Z     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+2026-10-19T15:08:46.225352906Z     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+2026-10-19T15:08:46.225356966Z     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+2026-10-19T15:08:46.225361027Z 
+2026-10-19T15:08:46.225365117Z Node.js v22.23.3
+2026-10-19T15:08:46.528513264Z /opt/render/project/src/artifacts/api-server:
+2026-10-19T15:08:46.528534066Z  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+2026-10-19T15:08:46.528542176Z Exit status 1
+2026-10-19T15:08:46.734853365Z  ELIFECYCLE  Command failed with exit code 1.
+2026-10-19T15:08:48.0460748Z ==> Exited with status 1
+2026-10-19T15:08:48.048931599Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+
+
+اصلاح المشكل

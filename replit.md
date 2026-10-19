@@ -53,7 +53,7 @@ Other staff roles are assigned by an admin through Settings after those accounts
 - Course schedule changes affect future sessions only. Completed/past sessions retain history.
 - Preserve managed Clerk/App Storage in this preview; external deployments use `AUTH_MODE=external` and `FILE_STORAGE_PROVIDER=database`. **Why:** Render cannot use the Replit storage sidecar, and the existing preview should not be broken by external configuration.
 - New production file bytes and metadata are stored in Neon; signed ten-minute direct Render transfers bypass the Vercel bridge body-size limits. Existing Replit files are not silently copied.
-- Use a direct Neon connection for migrations; automatically derive it from known Neon pooled endpoint hosts without changing credentials/TLS, honoring optional `DATABASE_MIGRATION_URL`. Never rewrite arbitrary provider hosts. **Why:** session advisory locks require a stable database session, and rejecting a standard Neon pooled URL unnecessarily blocks Render startup.
+- Use a direct Neon connection for migrations; automatically derive it from known Neon pooled endpoint hosts without changing credentials/TLS, honoring optional `DATABASE_MIGRATION_URL`. Runtime prefers `DATABASE_URL` but falls back to `DATABASE_MIGRATION_URL` with a warning. Never rewrite arbitrary provider hosts. **Why:** migration locks require a stable session; fallback lets an environment configured with only its direct migration URL start, while the pooled runtime URL remains the preferred setup.
 - `docs/deployment.html`, `render.yaml`, `vercel.json`, and the `.env.*.example` files describe deployment; credentials must never be committed or sent to the frontend.
 
 ## Current acceptance boundary

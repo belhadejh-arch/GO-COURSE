@@ -26,8 +26,8 @@
 <p><strong>Health Check Path:</strong> <code>/api/readyz</code>؛ يفحص إمكانية قراءة الجداول من القاعدة. Render يوفّر <code>PORT</code> تلقائيًا.</p>
 <table>
 <tr><th>متغير Render</th><th>القيمة أو المعنى</th></tr>
-<tr><td><code>DATABASE_URL</code></td><td>رابط Neon السري مع TLS. لا تضفه إلى Vercel.</td></tr>
-<tr><td><code>DATABASE_MIGRATION_URL</code></td><td>اختياري لتجاوز اتصال الترحيلات. رابط Neon المجمّع يُحوّل تلقائيًا إلى نظيره المباشر للتهيئة فقط.</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td>رابط Neon السري مع TLS، وهو رابط التشغيل الأساسي. لا تضفه إلى Vercel.</td></tr>
+<tr><td><code>DATABASE_MIGRATION_URL</code></td><td>اختياري لتجاوز اتصال الترحيلات. رابط Neon المجمّع يُحوّل تلقائيًا إلى نظيره المباشر للتهيئة فقط. إذا غاب DATABASE_URL، يُستخدم هذا الرابط للتشغيل مؤقتًا.</td></tr>
 <tr><td><code>CLERK_SECRET_KEY</code></td><td>المفتاح السري لتطبيق Clerk الخارجي؛ يبقى على الخادم.</td></tr>
 <tr><td><code>CLERK_PUBLISHABLE_KEY</code></td><td>المفتاح العام لنفس تطبيق Clerk.</td></tr>
 <tr><td><code>OWNER_EMAIL</code></td><td>بريد المالك المؤكد الذي يحصل على صلاحيات المدير عند الدخول.</td></tr>
