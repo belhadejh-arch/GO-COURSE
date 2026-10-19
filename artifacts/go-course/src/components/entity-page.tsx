@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
-import { Archive, ChevronLeft, ChevronRight, ExternalLink, MailPlus, Eye, FileText, Pencil, Plus, Printer, Search } from 'lucide-react';
-import { getListSchoolRecordsQueryKey, useArchiveSchoolRecord, useCreateSchoolRecord, useListSchoolRecords, useUpdateSchoolRecord } from '@workspace/api-client-react';
+import { Archive, ChevronLeft, ChevronRight, ClipboardCopy, ExternalLink, KeyRound, Eye, FileText, Pencil, Plus, Printer, Search } from 'lucide-react';
+import { getListSchoolRecordsQueryKey, useArchiveSchoolRecord, useCreateSchoolRecord, useListSchoolRecords, useResetSchoolPassword, useUpdateSchoolRecord } from '@workspace/api-client-react';
 import type { SchoolRecord } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState, ErrorState, ListSkeleton, PageHeader, StatusBadge } from '@/components/common';
 import { RecordDialog } from '@/components/record-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +50,8 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
   });
   const update = useUpdateSchoolRecord();
   const archive = useArchiveSchoolRecord();
+  const resetPassword = useResetSchoolPassword();
+  const [temporaryCredentials, setTemporaryCredentials] = useState<{email:string;password:string}|null>(null);
   const [q, setQ] = useState('');
   const [statusF, setStatusF] = useState('');
   const [editing, setEditing] = useState<SchoolRecord | null>(null);
@@ -107,6 +110,12 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
     archive.mutate({ entity, id: toArchive.id }, {
       onSuccess: () => { invalidate(entity, toArchive.id); toast({ title: 'تمت الأرشفة' }); setToArchive(null); },
       onError: (e) => { toast({ title: 'تعذّرت الأرشفة', description: errMsg(e), variant: 'destructive' }); setToArchive(null); },
+    });
+  };
+  const resetProfileLogin = (r:SchoolRecord) => {
+    resetPassword.mutate({id:String(r.data.accountId||r.id)},{
+      onSuccess:(credentials)=>{setTemporaryCredentials(credentials);invalidate(entity,r.id);},
+      onError:(error)=>toast({title:"تعذّرت إعادة ضبط الدخول",description:errMsg(error),variant:"destructive"}),
     });
   };
 
@@ -203,6 +212,11 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
                         {entity === 'students' && ['enrollments', 'attendance', 'payments'].map((e) => (
                           <Link key={e} href={`/${e}?studentId=${r.id}`} className="rounded-md bg-secondary px-2 py-1 text-[11px] font-semibold" data-testid={`link-student-${e}-${r.id}`}>{ENTITIES[e].plural}</Link>
                         ))}
+                        {['students','teachers'].includes(entity) && role === 'admin' && rowWritable(r) && !['disabled','archived'].includes(r.status) && (
+                          <Button size="sm" variant="outline" disabled={resetPassword.isPending} onClick={()=>resetProfileLogin(r)} data-testid={`button-reset-login-${r.id}`}>
+                            <KeyRound className="ms-1.5 h-3.5 w-3.5"/>{resetPassword.isPending?'جارٍ إعدادها...':'إعادة ضبط الدخول'}
+                          </Button>
+                        )}
                         {entity === 'invoices' && (
                           <Link href={`/invoices/${r.id}`} className="inline-flex h-8 items-center gap-1 rounded-lg bg-secondary px-2.5 text-xs font-semibold" data-testid={`link-print-${r.id}`}><Printer className="h-3.5 w-3.5" />عرض وطباعة</Link>
                         )}
@@ -235,6 +249,24 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
       )}
 
       <RecordDialog cfg={cfg} open={open} onClose={() => setOpen(false)} record={editing} lookup={lookup} role={role} defaults={studentParam?{studentId:studentParam}:undefined} readOnly={!!editing && !rowWritable(editing)} />
+
+      <Dialog open={!!temporaryCredentials} onOpenChange={(open)=>!open&&setTemporaryCredentials(null)}>
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>بيانات الدخول المؤقتة</DialogTitle>
+            <DialogDescription>أرسل هذه البيانات لصاحب الحساب. سيُطلب منه اختيار كلمة مرور جديدة عند أول دخول. لن تُعرض كلمة المرور مرة أخرى بعد إغلاق النافذة.</DialogDescription>
+          </DialogHeader>
+          {temporaryCredentials&&<div className="space-y-3">
+            <label className="block text-sm font-semibold">البريد الإلكتروني</label>
+            <div dir="ltr" className="rounded-lg border bg-muted/40 p-3 text-sm">{temporaryCredentials.email}</div>
+            <label className="block text-sm font-semibold">كلمة المرور المؤقتة</label>
+            <input aria-label="كلمة المرور المؤقتة" readOnly dir="ltr" value={temporaryCredentials.password} onFocus={(e)=>e.currentTarget.select()} className="field-input font-mono" data-testid="temporary-password"/>
+            <Button className="w-full" onClick={()=>void navigator.clipboard.writeText(temporaryCredentials.password).then(()=>toast({title:"تم نسخ كلمة المرور"})).catch(()=>toast({title:"انسخ كلمة المرور يدويًا من الحقل"}))} data-testid="button-copy-temporary-password">
+              <ClipboardCopy className="ms-2 h-4 w-4"/>نسخ كلمة المرور
+            </Button>
+          </div>}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
         <AlertDialogContent dir="rtl">

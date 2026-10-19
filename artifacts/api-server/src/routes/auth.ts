@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { randomBytes } from "node:crypto";
-import { db, schoolCredentials, schoolSessions, schoolUsers, schoolLoginLimits } from "@workspace/db";
+import { randomBytes, randomUUID } from "node:crypto";
+import { db, schoolCredentials, schoolSessions, schoolUsers, schoolRecords, schoolLoginLimits } from "@workspace/db";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "../../../../lib/db/src/passwords";
 import { PRIMARY_ADMIN_EMAIL } from "../../../../lib/db/src/bootstrap-admin";
@@ -79,12 +79,40 @@ router.post("/auth/password", async (req, res) => {
 router.post("/auth/accounts/:id/password", async (req, res) => {
   const user = (req as NativeRequest).schoolUser;
   if (user?.role !== "admin") fail(403, "إنشاء وإعادة تعيين الحسابات متاح للمدير فقط.");
-  const [target] = await db.select().from(schoolUsers).where(eq(schoolUsers.id, String(req.params.id)));
-  if (!target) fail(404, "الحساب غير موجود.");
-  if (target.id === user.id) fail(400, "استخدم تغيير كلمة المرور لحسابك.");
+  const requestedId=String(req.params.id);
+  let [target] = await db.select().from(schoolUsers).where(eq(schoolUsers.id, requestedId));
+  const [profile]=!target&&/^\d+$/.test(requestedId)
+    ? await db.select().from(schoolRecords).where(eq(schoolRecords.id,Number(requestedId)))
+    : [undefined];
+  if(!target&&(!profile||!["students","teachers"].includes(profile.entity)))fail(404,"ملف الطالب أو الأستاذ غير موجود.");
+  if(profile&&["disabled","archived"].includes(profile.status))fail(409,"الحساب معطّل أو مؤرشف. فعّله من ملف المستخدم أولًا.");
+  if (target?.id === user.id) fail(400, "استخدم تغيير كلمة المرور لحسابك.");
+  if(target&&["admin","staff"].includes(target.role))fail(403,"هذه العملية مخصّصة لحسابات الطلاب والأساتذة.");
+  const email=String(target?.email??profile?.data.email??"").trim().toLowerCase();
+  if(!email)fail(400,"البريد الإلكتروني غير مسجّل في الملف.");
   const password = typeof req.body?.password === "string" ? req.body.password : randomBytes(12).toString("base64url");
   const passwordHash = await hashPassword(password);
   await db.transaction(async tx => {
+    if(!target) {
+      [target]=await tx.select().from(schoolUsers).where(eq(schoolUsers.email,email));
+      if(target&&["admin","staff"].includes(target.role))fail(409,"لا يمكن ربط ملف الطالب أو الأستاذ بحساب إداري.");
+      if(target&&!target.enabled)fail(409,"الحساب معطّل. فعّله من إدارة الحسابات أولًا.");
+      if(!target) {
+        [target]=await tx.insert(schoolUsers).values({
+          id:`native_${randomUUID()}`,email,name:profile!.title,role:profile!.entity==="teachers"?"teacher":"student",
+        }).onConflictDoNothing().returning();
+        if(!target)[target]=await tx.select().from(schoolUsers).where(eq(schoolUsers.email,email));
+      }
+      if(!target)fail(409,"تعذّر ربط ملف المستخدم بحساب الدخول.");
+    }
+    if(profile) {
+      await tx.update(schoolUsers).set({
+        email,name:profile.title,role:profile.entity==="teachers"?"teacher":"student",enabled:true,
+      }).where(eq(schoolUsers.id,target.id));
+      await tx.update(schoolRecords).set({
+        data:{...profile.data,accountId:target.id},updatedAt:new Date(),
+      }).where(eq(schoolRecords.id,profile.id));
+    }
     await tx.insert(schoolCredentials).values({ userId: target.id, passwordHash, mustChangePassword: true })
       .onConflictDoUpdate({ target: schoolCredentials.userId, set: { passwordHash, mustChangePassword: true, updatedAt: new Date() } });
     await tx.delete(schoolSessions).where(eq(schoolSessions.userId, target.id));

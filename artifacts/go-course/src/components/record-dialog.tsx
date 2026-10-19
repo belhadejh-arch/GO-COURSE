@@ -387,7 +387,7 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
         const a = (v as string[]) ?? [];
         v = qs.map((_, i) => a[i] ?? '');
         if (qs.length && (v as string[]).every((x) => !x)) { setError('أجب عن سؤال واحد على الأقل'); return; }
-      } else if (typeof v === 'string') v = v.trim() === '' ? undefined : v.trim();
+      } else if (typeof v === 'string') v = f.type === 'password' ? (v === '' ? undefined : v) : (v.trim() === '' ? undefined : v.trim());
       if (f.required && !(f.type === 'password' && record) && (v === undefined || (Array.isArray(v) && !v.length))) { setError(`الحقل مطلوب: ${f.label}`); return; }
       if (v === undefined) { if (record && record.data[f.key] != null) out[f.key] = null; else delete out[f.key]; } else out[f.key] = v;
     }
