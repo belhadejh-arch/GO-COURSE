@@ -1,0 +1,624 @@
+تعليمات و تعديلات جديدة
+
+اضف خاصية 
+للاساتذة و الطلبة 
+
+
+الأستاذ : 
+ 
+امكانية التعديل الى البروفايل
+
+تعديل صورة البروفايل رفع صورة 
+
+تعديل على رقم الهاتف 
+تعديل  كلمة السر 
+تعديل البريد الالكتروني 
+المكتبة 
+و تظهر فيها الكتب المتوفرة حسب لغة الاستاذ 
+وفي الاسفل 
+زر طلب منهاج
+تظهر استمارة 
+اختيار المنهاج  من مناهج المتوفرة 
+اختيار متعدد
+المستويات  
+اختيار متعدد 
+A1
+A2
+B1
+B2
+C1
+C2 
+
+طلب الملفات الصوتية و المرئية 
+نعم 
+لا 
+
+رقم التلجرام لإستلام الملفات 
+
+
+
+يتم ظهور المناهج حسب لغة التدريس المخصصة للأستاذ 
+
+في اللغة الانجليزية
+1. Headway
+2. English File
+3. American English File
+4. Speakout
+5. Outcomes
+6. Empower
+7. Interchange
+8. Four Corners
+9. Life
+10. Cutting Edge
+11. Roadmap
+12. Grammar in Use
+13. Oxford Word Skills
+14. English for Everyone
+15. Face2Face
+16. Navigate
+17. Evolve
+18. Open World
+19. Wider World
+20. Solutions
+21. Gold Experience
+22. Complete IELTS
+23. Mindset for IELTS
+24. The Official Cambridge Guide to IELTS
+25. Official TOEFL iBT Tests
+26. Cambridge English Complete
+27. Objective First
+28. Objective Advanced
+29. PTE Academic Expert
+30. Ready for IELTS
+31. Focus
+32. Speak Now
+33. Touchstone
+34. American English File Starter
+35. English Unlimited
+
+اللغة الفرنسية 
+1. Alter Ego+
+2. Cosmopolite
+3. Édito
+4. Défi
+5. Tendances
+6. Inspire
+7. L'atelier
+8. Le Nouveau Taxi!
+9. Saison
+10. Amical
+11. Version Originale
+12. Latitudes
+13. Grammaire progressive du français
+14. Vocabulaire progressif du français
+15. Communication progressive du français
+16. Défi Actif
+17. Entre Nous
+18. Alors ?
+19. Rond-Point
+20. Nickel !
+21. Ici
+22. Le DELF 100% réussite
+23. ABC DELF
+24. ABC DALF
+25. Réussir le DELF
+26. Réussir le DALF
+27. Préparation à l'examen du DELF
+28. Le TCF en 350 activités
+29. TCF 250 activités
+30. Objectif Diplomatie
+31. Edito Pro
+32. Grammaire essentielle du français
+33. Phonétique progressive du français
+34. Littérature progressive du français
+35. Compréhension orale progressive du français
+
+اللغة الروسية 
+1. Поехали!
+2. Дорога в Россию
+3. Жили-были
+4. Русский язык. Первые шаги
+5. Время говорить по-русски!
+6. Точка.ру
+7. Ключи
+8. Русский сувенир
+9. Лестница
+10. Матрёшка
+11. Русский класс
+12. Живая речь
+13. Русский язык для начинающих
+14. The New Penguin Russian Course
+15. FSI Russian Language Course
+16. Давайте!
+17. Русский без границ
+18. Окно в Россию
+19. Пять элементов
+20. Русский язык. 5 элементов
+21. Практическая грамматика русского языка
+22. Русская грамматика в упражнениях
+23. Тесты по русскому языку как иностранному
+24. Подготовка к ТРКИ
+25. Лексический минимум по русскому языку как иностранному
+26. TORFL Preparation
+27. Russian Through Propaganda
+28. Russian for Everybody
+29. Living Language Russian
+30. Colloquial Russian
+31. Complete Russian
+32. Teach Yourself Russian
+33. Russian in Exercises
+34. Русский язык в упражнениях
+35. ТРКИ: Типовые тесты
+
+اللغة التركية 
+1. İstanbul Yabancılar İçin Türkçe
+2. Yedi İklim Türkçe
+3. Yeni Hitit
+4. Gazi TÖMER Türkçe
+5. Yunus Emre Enstitüsü Türkçe Öğretim Seti
+6. Türkçeye Yolculuk
+7. Türkçe Öğreniyoruz
+8. Yeni İstanbul Uluslararası Öğrenciler İçin Türkçe
+9. Kolay Gelsin
+10. Türkçe Okuyorum
+11. Türkçe Dilbilgisi
+12. Türkçe Alıştırmalar
+13. Turkish Grammar in Practice
+14. Teach Yourself Complete Turkish
+15. FSI Turkish Basic Course
+16. İzmir Yabancılar İçin Türkçe
+17. Hitit Yabancılar İçin Türkçe
+18. Türkçe Öğrenelim
+19. Türkçe Konuşalım
+20. Türkçe Öğreniyorum
+21. Türkçe Dil Bilgisi
+22. Yabancılar İçin Türkçe Dilbilgisi
+23. Turkish in Three Months
+24. Colloquial Turkish
+25. Complete Turkish
+26. Teach Yourself Turkish
+27. Turkish for Beginners
+28. TYS Sınav Hazırlık
+29. Türkçe Yeterlik Sınavı Hazırlık
+30. TÖMER Sınav Hazırlık Kitapları
+31. Yedi İklim Türkçe Sınav Hazırlık
+32. İstanbul Türkçe Çalışma Kitabı
+33. Türkçe Öğreniyorum A1
+34. Türkçe Öğreniyorum A2
+35. Türkçe Öğreniyorum B1
+
+اللغة الالمانية
+
+1. Menschen
+2. Schritte international Neu
+3. Netzwerk neu
+4. Pluspunkt Deutsch
+5. Studio 21
+6. Sicher!
+7. Aspekte neu
+8. Begegnungen
+9. Erkundungen
+10. Motive
+11. Linie 1
+12. Grammatik aktiv
+13. Deutsch üben
+14. Themen aktuell
+15. Spektrum Deutsch
+16. Momente
+17. Weitblick
+18. Mittelpunkt
+19. Berliner Platz
+20. Passwort Deutsch
+21. Ja genau!
+22. Schritte plus Neu
+23. Netzwerk
+24. Fit fürs Goethe-Zertifikat
+25. Mit Erfolg zum Goethe-Zertifikat
+26. Prüfungstraining Goethe-Zertifikat
+27. telc Deutsch Prüfungstraining
+28. TestDaF Training
+29. Fit fürs DSH
+30. Mit Erfolg zum TestDaF
+31. Prüfung Express
+32. Grammatik ganz klar!
+33. Übungsgrammatik für die Grundstufe
+34. Mit Erfolg zu telc Deutsch B2
+35. Prüfungstraining DaF
+
+اللغة البرتغالية 
+1. Português XXI
+2. Passaporte para Português
+3. Português em Foco
+4. Aprender Português
+5. Novo Avenida Brasil
+6. Falar... Ler... Escrever... Português
+7. Bem-Vindo! A Língua Portuguesa no Mundo da Comunicação
+8. Muito Prazer
+9. Ponto de Encontro
+10. Gramática Ativa
+11. Português Atual
+12. Lusofonia
+13. Português para Estrangeiros
+14. FSI Brazilian Portuguese Fast Course
+15. Practice Portuguese
+16. Português sem Fronteiras
+17. Na Onda do Português
+18. Português Global
+19. Português XXI Nova Edição
+20. Português para Todos
+21. Português em Timor
+22. Português Língua Não Materna
+23. Gramática Aplicada
+24. Aprender Português pela Comunicação
+25. Português Empresarial
+26. Preparação para o CAPLE
+27. DIPLE Preparação
+28. DEPLE Preparação
+29. DAPLE Preparação
+30. DUPLE Preparação
+31. Celpe-Bras Preparação
+32. Português para Falantes de Espanhol
+33. Português para Principiantes
+34. Novo Português sem Fronteiras
+35. CIPLE Preparação
+
+
+اللغة الإيطالية 
+1. Nuovo Espresso
+2. Nuovissimo Progetto Italiano
+3. Via del Corso
+4. Dieci
+5. Al dente
+6. Nuovo Contatto
+7. Linea Diretta
+8. Rete!
+9. Progetto Italiano Junior
+10. In italiano
+11. Grammatica pratica della lingua italiana
+12. Vocabolario della lingua italiana
+13. Italiano in pratica
+14. FSI Italian Fast Course
+15. L'italiano all'università
+16. Qui Italia
+17. UniversItalia
+18. Bravissimo!
+19. Domani
+20. Magari
+21. Espresso Ragazzi
+22. Caffè Italia
+23. Nuovo Progetto Italiano
+24. Grammatica avanzata della lingua italiana
+25. Via del Corso A1
+26. Via del Corso A2
+27. CILS Preparazione agli esami
+28. CELI Preparazione
+29. PLIDA Preparazione
+30. CILS B1 Cittadinanza
+31. Nuovo Canta che ti passa
+32. Italiano per stranieri
+33. Percorso Italia
+34. Preparazione al CILS
+35. Preparazione al CELI
+
+
+
+اللغة الإسبانية
+1. Aula Internacional Plus
+2. Nuevo Prisma
+3. Nuevo Sueña
+4. Gente hoy
+5. Vitamina
+6. Bitácora
+7. Método 1
+8. Campus Sur
+9. Nos vemos hoy
+10. Español en marcha
+11. Gramática de uso del español
+12. Vocabulario de uso del español
+13. Preparación al DELE
+14. FSI Spanish Basic Course
+15. Sueña
+16. Nuevo ELE
+17. Pasaporte ELE
+18. Agencia ELE
+19. Nuevo Español en marcha
+20. Club Prisma
+21. Embarque
+22. Aula América
+23. Español por supuesto
+24. Gramática básica del estudiante de español
+25. Las claves del nuevo DELE
+26. El Cronómetro
+27. Preparación al SIELE
+28. DELE B2 Preparación
+29. DELE C1 Preparación
+30. Uso de la gramática española
+31. Español en directo
+32. Método de español para extranjeros
+33. Nuevo Ven
+34. Sueña Español
+35. Expertos
+
+
+اللغة الكورية
+1. Sejong Korean
+2. 세종한국어 회화
+3. 서울대 한국어
+4. 연세 한국어
+5. 이화 한국어
+6. 고려대 한국어
+7. Active Korean
+8. Integrated Korean
+9. Sogang Korean
+10. Vitamin Korean
+11. Korean Made Easy
+12. Talk To Me In Korean
+13. Korean Grammar in Use
+14. Easy Korean
+15. Fun! Fun! Korean
+16. 가나다 Korean
+17. 서강한국어
+18. 재미있는 한국어
+19. 한국어와 한국문화
+20. 배우기 쉬운 한국어
+21. 한국어뱅크
+22. New 가나다 Korean
+23. TOPIK I Preparation
+24. TOPIK II Preparation
+25. HOT TOPIK
+26. TOPIK 쓰기의 모든 것
+27. TOPIK Essential Grammar
+28. TOPIK in 30 Days
+29. Complete Guide to the TOPIK
+30. TOPIK Master
+31. Korean Grammar for International Learners
+32. Korean Through English
+33. Korean From Zero!
+34. Mastering Korean
+35. TOPIK 쓰기
+
+اللغة الصينية
+1. HSK Standard Course
+2. Developing Chinese
+3. New Practical Chinese Reader
+4. Boya Chinese
+5. Road to Success
+6. Easy Steps to Chinese
+7. Integrated Chinese
+8. Experiencing Chinese
+9. Discover China
+10. New Silk Road Business Chinese
+11. Chinese Made Easy
+12. A Course in Contemporary Chinese
+13. Short-Term Spoken Chinese
+14. HSK Vocabulary Course
+15. Practical Chinese Reader
+16. Chinese Paradise
+17. Learn Chinese with Me
+18. Great Wall Chinese
+19. Chinese for Beginners
+20. Business Chinese
+21. Gateway to Chinese
+22. My Chinese Classroom
+23. Chinese Link
+24. HSK Standard Course Workbook
+25. HSK Official Examination Papers
+26. HSKK Preparation
+27. BCT Business Chinese Test Preparation
+28. YCT Preparation
+29. HSK Vocabulary Builder
+30. HSK Grammar Guide
+31. New Target Chinese Spoken Language
+32. Mandarin Chinese
+33. Integrated Chinese Workbook
+34. Chinese for College Students
+35. New Concept Chinese
+اللغة اليابانية 
+1. Minna no Nihongo
+2. Genki
+3. Marugoto
+4. Dekiru Nihongo
+5. Irodori: Japanese for Life in Japan
+6. Tobira
+7. Japanese for Busy People
+8. Quartet
+9. Japanese From Zero!
+10. An Integrated Approach to Intermediate Japanese
+11. Genki Grammar
+12. A Dictionary of Basic Japanese Grammar
+13. Nihongo Fun & Easy
+14. Japanese for Everyone
+15. FSI Japanese Fast Course
+16. Daichi
+17. Shin Nihongo no Kiso
+18. Chuukyuu e Ikou
+19. Chuukyuu wo Manabou
+20. Nihongo Challenge
+21. Japanese Step by Step
+22. Japanese the Manga Way
+23. Japanese for Young People
+24. Japanese for Today
+25. Shin Kanzen Master
+26. Nihongo Sou Matome
+27. TRY! Japanese Language Proficiency Test
+28. JLPT Official Practice Workbook
+29. Kanji Master
+30. JLPT Tango
+31. Speed Master
+32. Mimi kara Oboeru
+33. Nihongo Power Drill
+34. Quartet II
+35. New Approach Japanese
+
+اللغة الهولندية 
+1. Nederlands in gang
+2. Nederlands in actie
+3. Nederlands op niveau
+4. De Delftse Methode
+5. Code+ Nederlands
+6. TaalCompleet
+7. Contact! Nieuw
+8. Help! 1, 2, 3
+9. De Opmaat
+10. De Sprong
+11. De Finale
+12. Klare Taal!
+13. Nederlands naar perfectie
+14. Vanzelfsprekend
+15. Taaltalent
+16. Nederlands voor buitenlanders
+17. Zo gezegd
+18. In zicht
+19. Nieuw Nederlands
+20. Taal Vitaal
+21. Nederlands voor anderstaligen
+22. De Opmaat Werkboek
+23. Nederlands in actie Werkboek
+24. Voorbereiding op het Staatsexamen NT2
+25. Staatsexamen NT2 Programma I
+26. Staatsexamen NT2 Programma II
+27. KNM Oefenexamens
+28. Inburgeringsexamen Oefenen
+29. Nederlands Beter Spreken
+30. Nederlands Beter Schrijven
+31. De Finale Werkboek
+32. Nederlands voor gevorderden
+33. Delftse Methode Werkboek
+34. Contact! Nieuw Werkboek
+35. Nederlands op niveau Werkboek
+
+اللغة البولندية 
+
+1. Hurra!!! Po polsku
+2. Polski krok po kroku
+3. Krok po kroku Junior
+4. POLSKI bez problemu!
+5. Start 1, 2, 3
+6. Język polski? Chcę i mogę!
+7. Cześć, jak się masz?
+8. Polski jest cool
+9. Z polskim na ty
+10. Po polsku po Polsce
+11. Gramatyka? Dlaczego nie?!
+12. Słownictwo polskie w ćwiczeniach
+13. Polski, krok po kroku – Junior
+14. Polish in 4 Weeks
+15. Polish for Foreigners
+16. Polski na dobry start
+17. Polski bez granic
+18. Polski w pracy
+19. Polski, krok po kroku 2
+20. Język polski dla cudzoziemców
+21. ABC języka polskiego
+22. Polski od podstaw
+23. Już mówię po polsku
+24. Gramatyka języka polskiego dla cudzoziemców
+25. Słownictwo na poziomach B1–C2
+26. Polski na co dzień
+27. Testuj swój polski
+28. Hurra!!! Po polsku 2
+29. Hurra!!! Po polsku 3
+30. Polski krok po kroku – B1
+31. Certyfikat Polski – Testy
+32. Przykładowe testy certyfikatowe z języka polskiego
+33. Polish Grammar in a Nutshell
+34. Colloquial Polish
+35. Complete Polish
+
+
+اللغة السويدية 
+1. Rivstart
+2. Form i fokus
+3. På svenska!
+4. Svenska utifrån
+5. Mål
+6. Svenska för dig
+7. Goda grunder
+8. Svenska för invandrare
+9. Vardagssvenska
+10. Svenska i fokus
+11. Språkvägen
+12. Svenska för alla
+13. Text i fokus
+14. Svenska på svenska
+15. FSI Swedish Basic Course
+16. Complete Swedish
+17. Teach Yourself Complete Swedish
+18. Colloquial Swedish
+19. Swedish: An Essential Grammar
+20. På svenska 1
+21. På svenska 2
+22. På svenska 3
+23. Rivstart A1+A2
+24. Rivstart B1+B2
+25. Rivstart B2+C1
+26. Svenska som andraspråk
+27. TISUS Preparation
+28. Swedex Preparation
+29. SFI Studieväg 1–3
+30. Svenska impulser
+31. Språkporten
+32. Sagor och sanningar
+33. Nya mål
+34. Övningsbok i svensk grammatik
+35. Svenska för högre studier
+
+
+
+جميع الطلبة 
+الطلبة الذين يدرسون حاليا 
+الطلبة اكملوا مستواهم 
+
+الدفعات الإجمالية 
+الدفعات القادمة 
+الدفعات المعلقة 
+الدفعات المستلمة 
+
+
+برمجة على أساس  
+اي طالب يدفع مبلغ معين 
+مباشرة عند تسجيل الطالب او مجموعة 
+
+يتم قسم الدفعات  
+50% من الارباح للمنصة 
+و 50% للأستاذ
+
+و يتم تسجيل الدفعات و الفواتير وكل شيء في الادارة و انتقال الارباح للاساتذة 
+
+و تبقى الارباح مسجلة و لفواتير وكل شيء 
+
+
+
+الطالب : 
+ 
+امكانية التعديل الى البروفايل
+
+تعديل صورة البروفايل رفع صورة 
+
+تعديل على رقم الهاتف 
+تعديل  كلمة السر 
+تعديل البريد الالكتروني 
+
+الدورات المسجل فيها 
+طلب تجديد في المستوى 
+( يتم فتحه فقط عند قرابة نهاية المستوى ) 
+
+الدورات المنتهية 
+
+طلب شهادة لغة ( مجانية ) 
+
+طلب شهادة معتمدة لاتباث المستوى ( مدفوعة ) 
+5000 دج 
+تصل الى باب المنزل 
+
+
+الادارة يصل فيها كل شيء 
+اي معاملة يقوم بها الاستاذ او الطالب 
+تظهر لدى الادارة
+
+
+في حساب الادمن 
+يمكن حذف اي دورة اي طالب و اي استاذة و الحذف يتم بكل سهولة  
+
+
+يرجى التقيد بالتعديلات المطلوبةو فقط
