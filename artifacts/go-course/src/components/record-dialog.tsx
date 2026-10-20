@@ -354,6 +354,7 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
     const base: Data = {};
     cfg.fields.forEach((f) => { if (f.def !== undefined) base[f.key] = f.def; });
     const src: Data = record ? { ...record.data } : { ...base, ...defaults };
+    if(cfg.key==="resources"&&!src.scope)src.scope="course";
     if (!record && role === 'admin' && ['students','teachers'].includes(cfg.key)) {
       if (!generatedPassword.current) generatedPassword.current=makeTemporaryPassword();
       src.loginPassword=generatedPassword.current;
@@ -402,6 +403,10 @@ export function RecordDialog({ cfg, open, onClose, record, lookup, role, default
       } else if (typeof v === 'string') v = f.type === 'password' ? (v === '' ? undefined : v) : (v.trim() === '' ? undefined : v.trim());
       if (f.required && !(f.type === 'password' && record) && (v === undefined || (Array.isArray(v) && !v.length))) { setError(`الحقل مطلوب: ${f.label}`); return; }
       if (v === undefined) { if (record && record.data[f.key] != null) out[f.key] = null; else delete out[f.key]; } else out[f.key] = v;
+    }
+    if(cfg.key==="resources") {
+      if(out.scope==="library")delete out.courseId;
+      else {delete out.languageId;delete out.curriculumName;}
     }
     if (cfg.key === 'teachers' && !(Array.isArray(out.levels) && out.levels.length) && !out.languageLevels) { setError('حدّد مستويات الأستاذ لكل لغة أو المستويات المشتركة'); return; }
     if (cfg.key === 'enrollments') {

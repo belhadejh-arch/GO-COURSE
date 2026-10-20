@@ -1,0 +1,2 @@
+ALTER TABLE "school_records" DROP CONSTRAINT "school_record_entity";--> statement-breakpoint
+ALTER TABLE "school_records" ADD CONSTRAINT "school_record_entity" CHECK ("school_records"."entity" in ('languages','levels','students','teachers','courses','enrollments','groups','sessions','lessons','resources','curriculumRequests','assignments','submissions','attendance','plans','subscriptions','payments','invoices','notifications','settings','audit','progress'));

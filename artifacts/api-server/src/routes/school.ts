@@ -68,7 +68,9 @@ async function checkFiles(a:Awaited<ReturnType<typeof access>>,data:Record<strin
   for (const {key,path} of paths) {
     if (!path) continue;
     const [file]=await db.select().from(schoolFiles).where(eq(schoolFiles.objectPath,String(path)));
-    if (!file || (file.ownerId!==a.user?.id && !privileged(a,"resources","write"))) fail(403,"الملف غير متاح لهذا المستخدم.");
+    const existingPhoto=a.rows.find(row=>row.id===a.profileId)?.data.photoPath;
+    const isExistingPhoto=key==="photoPath"&&existingPhoto===path;
+    if (!file || (file.ownerId!==a.user?.id && !privileged(a,"resources","write") && !isExistingPhoto)) fail(403,"الملف غير متاح لهذا المستخدم.");
     const object=await storage.open(file.objectPath);
     const [metadata]=await object.getMetadata();
     if (Number(metadata.size)!==file.size || Number(metadata.size)>52428800) fail(400,"حجم الملف المرفوع لا يطابق البيانات المسجلة.");
@@ -87,8 +89,14 @@ router.post("/school/records/:entity",async(req,res)=>{
   if (["invoices","audit","notifications"].includes(entity)) fail(403,"هذه السجلات تُنشأ تلقائيًا فقط.");
   const raw=parsed.data.data || {};
   canWrite(a,entity,raw);
-  let status=parsed.data.status || (["courses","lessons","resources","assignments"].includes(entity)?"draft":["sessions"].includes(entity)?"scheduled":["payments","submissions","subscriptions"].includes(entity)?"pending":"active");
+  let status=parsed.data.status || (["courses","lessons","resources","assignments"].includes(entity)?"draft":["sessions"].includes(entity)?"scheduled":["payments","submissions","subscriptions","curriculumRequests"].includes(entity)?"pending":"active");
   if (a.user?.role==="student") status=entity==="progress"?"completed":"pending";
+  if(entity==="curriculumRequests"&&a.user?.role==="teacher") {
+    const profile=a.rows.find(r=>r.id===a.profileId&&r.entity==="teachers");
+    raw.teacherId=a.profileId;
+    raw.teacherName=profile?.title||a.user.name;
+    raw.teacherEmail=a.user.email;
+  }
   if (entity==="payments" && status!=="pending") fail(400,"أنشئ طلب الدفع أولًا ثم راجعه.");
   const data=validateData(a,entity,raw);
   if (entity==="submissions" && a.user?.role==="student") status=data.requiresReview?"submitted":"graded";
@@ -99,10 +107,12 @@ router.post("/school/records/:entity",async(req,res)=>{
 });
 router.patch("/school/records/:entity/:id",async(req,res)=>{
   const entity=entityOf(req.params.entity),a=await access(req);
-  if(["students","teachers"].includes(entity)&&a.user?.role!=="admin")fail(403,"تعديل الحسابات متاح للمدير فقط.");
   const id=numberId(req.params.id);
   const row=a.rows.find(r=>r.id===id && r.entity===entity);
   if (!row || !canRead(a,row)) fail(404,"السجل غير موجود.");
+  const selfProfile=["students","teachers"].includes(entity)&&row.id===a.profileId&&
+    ((entity==="teachers"&&a.user?.role==="teacher")||(entity==="students"&&a.user?.role==="student"));
+  if(["students","teachers"].includes(entity)&&a.user?.role!=="admin"&&!selfProfile)fail(403,"يمكنك تعديل ملفك الشخصي فقط.");
   const parsed=UpdateSchoolRecordBody.safeParse(req.body);
   if (!parsed.success) fail(400,"بيانات التعديل غير صالحة.");
   if (["invoices","audit"].includes(entity)) fail(403,"السجلات المالية وسجل التدقيق غير قابلين للتعديل.");
@@ -111,6 +121,13 @@ router.patch("/school/records/:entity/:id",async(req,res)=>{
   canWrite(a,entity,raw,row);
   if (a.user?.role==="teacher" && entity!=="submissions" && row.data.courseId!==raw.courseId) fail(403,"لا يمكن نقل المحتوى إلى دورة أخرى.");
   let status=parsed.data.status||row.status;
+  let title=parsed.data.title;
+  if(selfProfile) {
+    const allowed=new Set(["email","phone","photoPath"]);
+    if(Object.keys(parsed.data.data||{}).some(key=>!allowed.has(key)))fail(403,"يسمح لك بتعديل البريد والهاتف والصورة الشخصية فقط.");
+    status=row.status;
+    title=row.title;
+  }
   if (entity==="notifications") {
     if (a.user?.id!==row.ownerId && !privileged(a,entity,"write")) fail(403,"غير مسموح.");
     const [updated]=await db.update(schoolRecords).set({data:{...row.data,read:true},updatedAt:new Date()}).where(eq(schoolRecords.id,row.id)).returning();
@@ -127,7 +144,7 @@ router.patch("/school/records/:entity/:id",async(req,res)=>{
   if (entity==="submissions" && a.user?.role==="student") status=data.requiresReview?"submitted":"graded";
   if (entity==="submissions" && a.user?.role==="teacher") status="graded";
   validateStatus(entity,status);await checkFiles(a,data);
-  const updated=await persist(a,entity,parsed.data.title,status,data,row);
+  const updated=await persist(a,entity,title,status,data,row);
   res.json(GetSchoolRecordResponse.parse(serialize(a,updated)));
 });
 router.delete("/school/records/:entity/:id",async(req,res)=>{

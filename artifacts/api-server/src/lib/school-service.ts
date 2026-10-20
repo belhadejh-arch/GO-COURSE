@@ -146,7 +146,9 @@ export async function persist(a:Access,entity:string,title:string,status:string,
   if(person&&!existing&&!passwordHash)fail(400,"حدد كلمة مرور مؤقتة للحساب (12 حرفًا على الأقل).");
   if(person) {
     const {loginPassword:_,...safe}=data;data=safe;
-    if(a.user?.role!=="admin")fail(403,"إنشاء وتعديل الحسابات متاح للمدير فقط.");
+    const ownProfile=!!existing&&existing.id===a.profileId&&
+      ((entity==="teachers"&&a.user?.role==="teacher")||(entity==="students"&&a.user?.role==="student"));
+    if(a.user?.role!=="admin"&&!ownProfile)fail(403,"إنشاء الحسابات متاح للمدير، ويمكن للمستخدم تعديل ملفه الشخصي فقط.");
   }
   return db.transaction(async tx=>{
     // School-sized write traffic is serialized so overlapping timetable checks
@@ -239,6 +241,8 @@ export async function persist(a:Access,entity:string,title:string,status:string,
       let [user]=await tx.select().from(schoolUsers).where(eq(schoolUsers.email,oldEmail));
       if(user&&["admin","staff"].includes(user.role))fail(409,"لا يمكن ربط هذا الملف بحساب إداري.");
       if(!user)[user]=await tx.insert(schoolUsers).values({id:`native_${randomUUID()}`,email,name:row.title,role:entity==="teachers"?"teacher":"student"}).returning();
+       const [emailOwner]=await tx.select({id:schoolUsers.id}).from(schoolUsers).where(eq(schoolUsers.email,email));
+       if(emailOwner&&emailOwner.id!==user.id)fail(409,"البريد الإلكتروني مستخدم لحساب آخر.");
       await tx.update(schoolUsers).set({email,name:row.title,role:entity==="teachers"?"teacher":"student",enabled:!["disabled","archived"].includes(status)}).where(eq(schoolUsers.id,user.id));
       if(passwordHash) {
         await tx.insert(schoolCredentials).values({userId:user.id,passwordHash,mustChangePassword:true}).onConflictDoUpdate({target:schoolCredentials.userId,set:{passwordHash,mustChangePassword:true,updatedAt:new Date()}});

@@ -235,8 +235,10 @@ export const ENTITIES: Record<string, EntityConfig> = {
   resources: {
     key: 'resources', plural: 'المصادر', singular: 'مصدر', titleLabel: 'عنوان المصدر', statuses: so('draft', 'published'),
     fields: [
-      { key: 'courseId', label: 'الدورة', type: 'rel', entity: 'courses', required: true },
-      { key: 'languageId', label: 'اللغة', type: 'rel', entity: 'languages' },
+      { key: 'scope', label: 'مكان العرض', type: 'select', options: [{ value: 'course', label: 'دورة دراسية' }, { value: 'library', label: 'مكتبة الأستاذ' }], def: 'course', hideFor: ['teacher','student'], hint: 'ملفات المكتبة تظهر للأساتذة الذين يدرّسون اللغة المختارة.' },
+      { key: 'courseId', label: 'الدورة', type: 'rel', entity: 'courses', required: true, showIf: data => data.scope !== 'library' },
+      { key: 'languageId', label: 'اللغة', type: 'rel', entity: 'languages', required: true, showIf: data => data.scope === 'library' },
+      { key: 'curriculumName', label: 'المنهاج أو السلسلة', type: 'text', showIf: data => data.scope === 'library' },
       { key: 'level', label: 'المستوى', type: 'select', options: lv },
       { key: 'objectPath', label: 'الملف', type: 'file', required: true, wide: true },
       { key: 'contentType', label: 'نوع الملف', type: 'text', required: true, hint: 'يُملأ تلقائيًا عند رفع الملف.' },
@@ -384,6 +386,9 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'الرئيسية', items: [
     { href: '/dashboard', label: 'لوحة التحكم', icon: 'LayoutDashboard', roles: ALL },
     { href: '/notifications', label: 'الإشعارات', icon: 'Bell', roles: ALL },
+    { href: '/profile', label: 'ملفي الشخصي', icon: 'UserCheck', roles: ['teacher','student'] },
+    { href: '/library', label: 'مكتبة الأستاذ', icon: 'Library', roles: ['teacher'] },
+    { href: '/curriculum-requests', label: 'طلبات المناهج', icon: 'FileCheck2', roles: ['teacher','admin'] },
   ] },
   { group: 'الأكاديمية', items: [
     { href: '/languages', label: 'اللغات', icon: 'Languages', roles: ['admin', 'staff'] },

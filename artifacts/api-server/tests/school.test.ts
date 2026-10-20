@@ -117,5 +117,34 @@ test("financial invoice dedupe key depends only on payment",()=>assert.equal(ded
 test("notification belongs only to recipient",()=>{
   const n={...row(60,"notifications"),ownerId:"student-test"};assert.equal(canRead(studentAccess,n),true);assert.equal(canRead(teacherAccess,n),false);
 });
+test("teacher reads only published library materials for languages they teach",()=>{
+  const english=row(61,"resources",{scope:"library",languageId:1,objectPath:"/objects/english.pdf",contentType:"application/pdf"},"published");
+  const french=row(62,"resources",{scope:"library",languageId:2,objectPath:"/objects/french.pdf",contentType:"application/pdf"},"published");
+  assert.equal(canRead(teacherAccess,english),true);
+  assert.equal(canRead(teacherAccess,french),false);
+  assert.equal(canRead({...teacherAccess,rows:[...rows,language,teacher]}, {...english,status:"draft"}),false);
+});
+test("teacher can create a curriculum request but cannot change its status",()=>{
+  const request={...row(63,"curriculumRequests",{curricula:["English File"]},"pending"),ownerId:"teacher-test"};
+  assert.doesNotThrow(()=>canWrite(teacherAccess,"curriculumRequests",{}));
+  assert.equal(canRead(teacherAccess,request),true);
+  assert.equal(canRead(studentAccess,request),false);
+  expectStatus(()=>canWrite(teacherAccess,"curriculumRequests",request.data,request),403);
+});
+test("teacher can edit only their own profile record",()=>{
+  assert.doesNotThrow(()=>canWrite(teacherAccess,"teachers",{email:"new@example.invalid"},teacher));
+  expectStatus(()=>canWrite(teacherAccess,"teachers",{email:"other@example.invalid"},row(64,"teachers")),403);
+});
+test("curriculum request requires Telegram when media is requested",()=>{
+  const data={curricula:["English File"],levels:["A1","B1"],requestMedia:"yes",telegramNumber:"+213555000000",teacherId:2,teacherName:"Test Teacher",teacherEmail:"teacher@example.invalid"};
+  assert.deepEqual(validateData(teacherAccess,"curriculumRequests",data).levels,["A1","B1"]);
+  expectStatus(()=>validateData(teacherAccess,"curriculumRequests",{...data,telegramNumber:""}),400);
+});
+test("library resources require a language and teachers cannot publish library files",()=>{
+  const resource={scope:"library",languageId:1,objectPath:"/objects/book.pdf",contentType:"application/pdf"};
+  assert.equal(validateData(admin,"resources",resource).scope,"library");
+  expectStatus(()=>validateData(admin,"resources",{...resource,languageId:undefined}),400);
+  expectStatus(()=>canWrite(teacherAccess,"resources",resource),403);
+});
 
 process.on("beforeExit",()=>{void pool.end();});

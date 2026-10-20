@@ -23,7 +23,21 @@ const schema = {
   groups:z.object({courseId:id,teacherId:id}).passthrough(),
   sessions:z.object({courseId:id,teacherId:id,startsAt:date,endsAt:date,meetingUrl:z.string().url().optional()}).passthrough(),
   lessons:z.object({courseId:id,number:z.coerce.number().int().positive(),body:z.string().optional()}).passthrough(),
-  resources:z.object({courseId:id,objectPath:z.string().startsWith("/objects/"),contentType:z.string()}).passthrough(),
+  resources:z.object({
+    scope:z.enum(["course","library"]).default("course"),courseId:optionalId,languageId:optionalId,
+    curriculumName:z.string().max(160).optional(),level:z.enum(["A1","A2","B1","B2","C1","C2"]).optional(),
+    objectPath:z.string().startsWith("/objects/"),contentType:z.string().min(1),
+  }).passthrough().refine(v=>v.scope==="library"?!!v.languageId:!!v.courseId,{
+    message:"حدّد اللغة لملف المكتبة أو الدورة للمصدر الدراسي.",path:["languageId"],
+  }),
+  curriculumRequests:z.object({
+    curricula:z.array(z.string().trim().min(1).max(160)).min(1).max(50),
+    levels:z.array(z.enum(["A1","A2","B1","B2","C1","C2"])).min(1),
+    requestMedia:z.enum(["yes","no"]),telegramNumber:z.string().trim().max(64).optional(),
+    teacherId:id.optional(),teacherName:z.string().max(200).optional(),teacherEmail:z.string().email().optional(),
+  }).passthrough().refine(v=>v.requestMedia==="no"||!!v.telegramNumber?.trim(),{
+    message:"أدخل رقم أو اسم مستخدم تلغرام لاستلام الملفات الصوتية والمرئية.",path:["telegramNumber"],
+  }),
   assignments:z.object({courseId:id,dueDate:date,questions:z.array(z.object({type:z.enum(["multiple_choice","true_false","fill_blank","word_order","matching","short_answer","long_answer","file","audio"]),prompt:z.string().min(1),options:z.array(z.string()).optional(),correctAnswer:z.unknown().optional(),points:z.coerce.number().min(0).default(1)})).min(1)}).passthrough(),
   submissions:z.object({assignmentId:id,answers:z.array(z.unknown()).default([])}).passthrough(),
   attendance:z.object({sessionId:id,studentId:id,attendanceStatus:z.enum(["present","absent","late","excused"])}).passthrough(),
@@ -38,7 +52,7 @@ const schema = {
 };
 const refs: Record<string,string> = { languageId:"languages",courseId:"courses",studentId:"students",teacherId:"teachers",groupId:"groups",planId:"plans",sessionId:"sessions",lessonId:"lessons",assignmentId:"assignments",paymentId:"payments" };
 const statuses: Record<string,string[]> = {
-  courses:["draft","published","paused","archived"], enrollments:["active","paused","completed","cancelled","archived"], sessions:["scheduled","completed","cancelled","published","archived"], lessons:["draft","published","archived"],resources:["draft","published","archived"],assignments:["draft","published","archived"],
+  courses:["draft","published","paused","archived"], enrollments:["active","paused","completed","cancelled","archived"], sessions:["scheduled","completed","cancelled","published","archived"], lessons:["draft","published","archived"],resources:["draft","published","archived"],curriculumRequests:["pending","processing","fulfilled","rejected","archived"],assignments:["draft","published","archived"],
   subscriptions:["pending","active","expired","cancelled","paused","archived"],payments:["pending","confirmed","rejected"],students:["active","invited","disabled","archived"],teachers:["active","invited","disabled","archived"],submissions:["pending","submitted","graded"],attendance:["active","archived"],
 };
 export function validateStatus(entity:string, status:string) {

@@ -45,7 +45,7 @@ export const schoolRecords = pgTable("school_records", {
   index("school_records_entity_status").on(t.entity, t.status),
   index("school_records_owner").on(t.ownerId),
   uniqueIndex("school_profile_email").on(sql`lower(${t.data}->>'email')`).where(sql`${t.entity} in ('students','teachers') and ${t.status} <> 'archived'`),
-  check("school_record_entity", sql`${t.entity} in ('languages','levels','students','teachers','courses','enrollments','groups','sessions','lessons','resources','assignments','submissions','attendance','plans','subscriptions','payments','invoices','notifications','settings','audit','progress')`),
+  check("school_record_entity", sql`${t.entity} in ('languages','levels','students','teachers','courses','enrollments','groups','sessions','lessons','resources','curriculumRequests','assignments','submissions','attendance','plans','subscriptions','payments','invoices','notifications','settings','audit','progress')`),
 ]);
 
 export const schoolLinks = pgTable("school_links", {

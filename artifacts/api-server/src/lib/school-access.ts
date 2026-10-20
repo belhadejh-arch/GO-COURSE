@@ -7,7 +7,7 @@ export function fail(status: number, message: string): never {
   throw Object.assign(new Error(message), { status });
 }
 export const catalog = new Set(["languages", "levels", "courses", "plans"]);
-export const entities = new Set(["languages","levels","students","teachers","courses","enrollments","groups","sessions","lessons","resources","assignments","submissions","attendance","plans","subscriptions","payments","invoices","notifications","settings","audit","progress"]);
+export const entities = new Set(["languages","levels","students","teachers","courses","enrollments","groups","sessions","lessons","resources","curriculumRequests","assignments","submissions","attendance","plans","subscriptions","payments","invoices","notifications","settings","audit","progress"]);
 export const numberId = (value: unknown): number => Number(value) || 0;
 export const idList = (value: unknown): number[] => Array.isArray(value) ? value.map(Number).filter(Number.isInteger) : [];
 export type Access = { user: SchoolUser | null; profileId: number; rows: SchoolRow[]; courseIds: Set<number>; paidCourseIds: Set<number> };
@@ -57,6 +57,12 @@ export function canRead(a: Access, r: SchoolRow): boolean {
     return ["active","published"].includes(r.status);
   }
   if (!a.user) return false;
+  if (r.entity === "curriculumRequests") return a.user.role === "teacher" && r.ownerId === a.user.id;
+  if (r.entity === "resources" && r.data.scope === "library") {
+    if (a.user.role !== "teacher" || r.status !== "published") return false;
+    const profile=a.rows.find(row=>row.id===a.profileId && row.entity==="teachers");
+    return idList(profile?.data.languageIds).includes(numberId(r.data.languageId));
+  }
   if (r.entity === "teachers") return r.id === a.profileId || [...a.courseIds].some(id => a.rows.some(c => c.id === id && idList(c.data.teacherIds).includes(r.id)));
   if (r.entity === "students") {
     if (a.user.role === "student") return r.id === a.profileId;
@@ -85,6 +91,10 @@ export function canWrite(a: Access, entity: string, data: Record<string, unknown
   if (!a.user) fail(401, "سجّل الدخول أولًا.");
   if (privileged(a, entity, "write")) return;
   const role = a.user.role;
+  if (role==="teacher" && entity==="teachers" && existing?.id===a.profileId) return;
+  if (role==="student" && entity==="students" && existing?.id===a.profileId) return;
+  if (role==="teacher" && entity==="curriculumRequests" && !existing) return;
+  if (role==="teacher" && entity==="resources" && data.scope==="library") fail(403,"إضافة ملفات إلى المكتبة متاحة للإدارة فقط.");
   if (role === "teacher" && ["lessons","resources","assignments","sessions","attendance"].includes(entity)) {
     const courseId = numberId(data.courseId) || numberId(a.rows.find(s => s.id === numberId(data.sessionId))?.data.courseId);
     if (a.courseIds.has(courseId)) return;

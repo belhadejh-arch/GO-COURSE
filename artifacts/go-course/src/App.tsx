@@ -13,6 +13,9 @@ import Dashboard from '@/pages/dashboard';
 import SessionsPage from '@/pages/sessions';
 import { DocPage, InvoicePage, NotificationsPage, ReportsPage, SettingsPage } from '@/pages/misc';
 import NativeLoginPage from '@/pages/native-login';
+import ProfilePage from '@/pages/profile';
+import LibraryPage from '@/pages/library';
+import CurriculumRequestsPage from '@/pages/curriculum-requests';
 import { NativeAuthProvider, useNativeAuth } from '@/lib/native-auth';
 import { SchoolRealtime } from '@/components/school-realtime';
 
@@ -54,6 +57,9 @@ function Routes() {
     <Route path="/courses/:id" component={CoursePage} />
     <Route path="/plans">{() => <Adaptive entity="plans" />}</Route>
     <Route path="/dashboard">{() => shell(<Dashboard />)}</Route>
+    <Route path="/profile">{() => shell(<ProfilePage />)}</Route>
+    <Route path="/library">{() => shell(<LibraryPage />)}</Route>
+    <Route path="/curriculum-requests">{() => shell(<CurriculumRequestsPage />)}</Route>
     <Route path="/sessions">{() => shell(<SessionsPage />)}</Route>
     <Route path="/notifications">{() => shell(<NotificationsPage />)}</Route>
     <Route path="/reports">{() => shell(<ReportsPage />)}</Route>
