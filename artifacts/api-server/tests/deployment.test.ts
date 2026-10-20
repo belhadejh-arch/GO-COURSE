@@ -1,27 +1,33 @@
 import { test,after } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile,readdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { db,pool,schoolRecords,schoolUsers,schoolFiles,schoolFileContents } from "@workspace/db";
 import { sql,eq } from "drizzle-orm";
 import { seedCatalog } from "../../../lib/db/src/seed-catalog";
+import { CURRICULA_BY_LANGUAGE_CODE } from "../../../lib/db/src/curriculum-catalog";
 import { signFileToken,verifyFileToken } from "../src/lib/file-tokens";
 import { validFilePrefix } from "../src/lib/database-files";
 import { handler } from "../../../api/[...path]";
 
 test("deployment migration, catalog seeding, and private binary storage work without changing business data",async()=>{
   const name=`deployment_test_${randomUUID().replaceAll("-","")}`;
-  const migration=await readFile(new URL("../../../lib/db/migrations/0000_giant_titanium_man.sql",import.meta.url),"utf8");
+  const migrationDir=new URL("../../../lib/db/migrations/",import.meta.url);
+  const migrationFiles=(await readdir(migrationDir)).filter(file=>/^\d+_.*\.sql$/.test(file)).sort();
   const rollback=new Error("intentional test rollback");
   await assert.rejects(db.transaction(async tx=>{
     await tx.execute(sql.raw(`CREATE SCHEMA "${name}"`));
     await tx.execute(sql.raw(`SET LOCAL search_path TO "${name}"`));
-    for(const statement of migration.replaceAll('"public".',`"${name}".`).split("--> statement-breakpoint"))if(statement.trim())await tx.execute(sql.raw(statement));
+    for(const file of migrationFiles) {
+      const migration=await readFile(new URL(file,migrationDir),"utf8");
+      for(const statement of migration.replaceAll('"public".',`"${name}".`).split("--> statement-breakpoint"))if(statement.trim())await tx.execute(sql.raw(statement));
+    }
     await seedCatalog(tx);await seedCatalog(tx);
     const rows=await tx.select().from(schoolRecords);
     assert.equal(rows.filter(r=>r.entity==="languages").length,15);
     assert.equal(rows.filter(r=>r.entity==="levels").length,90);
-    assert.equal(rows.length,105);
+    assert.equal(rows.filter(r=>r.entity==="curricula").length,Object.values(CURRICULA_BY_LANGUAGE_CODE).flat().length);
+    assert.equal(rows.length,105+Object.values(CURRICULA_BY_LANGUAGE_CODE).flat().length);
     await tx.insert(schoolUsers).values({id:"deployment-test",email:"deployment@example.invalid",name:"Test"});
     const path="/objects/database/test";
     const bytes=Buffer.from("%PDF-1.7\nTest persisted bytes");

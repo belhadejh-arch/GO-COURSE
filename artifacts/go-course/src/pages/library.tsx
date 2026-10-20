@@ -4,7 +4,6 @@ import { useListSchoolRecords } from '@workspace/api-client-react';
 import type { SchoolRecord } from '@workspace/api-client-react';
 import { ErrorState, ListSkeleton, PageHeader } from '@/components/common';
 import { useMe } from '@/hooks/use-school';
-import { CURRICULA_BY_LANGUAGE, curriculumLanguage } from '@/lib/curricula';
 import { errMsg, fileUrl, str } from '@/lib/school';
 
 function mediaIcon(type: string) {
@@ -16,6 +15,7 @@ function mediaIcon(type: string) {
 export default function LibraryPage() {
   const { me } = useMe();
   const items = useListSchoolRecords('resources');
+  const catalog = useListSchoolRecords('curricula');
   const languages = useListSchoolRecords('languages');
   const [language, setLanguage] = useState('');
   const [level, setLevel] = useState('');
@@ -27,17 +27,18 @@ export default function LibraryPage() {
 
   const catalogRows = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
-    return languageRows
-      .filter((lang) => me?.role !== 'teacher' || teacherLanguageIds.includes(lang.id))
-      .filter((lang) => !language || String(lang.id) === language)
-      .flatMap((lang) => {
-        const key = curriculumLanguage(lang.title, str(lang.data.code));
-        if (!key) return [];
-        return CURRICULA_BY_LANGUAGE[key]
-          .filter((title) => !term || title.toLocaleLowerCase().includes(term))
-          .map((title) => ({ title, languageTitle: lang.title, languageId: lang.id }));
-      });
-  }, [languageRows, language, search, me?.role, teacherLanguageIds.join(',')]);
+    return (catalog.data ?? [])
+      .filter((curriculum) => curriculum.status === 'published')
+      .filter((curriculum) => me?.role !== 'teacher' || teacherLanguageIds.includes(Number(curriculum.data.languageId)))
+      .filter((curriculum) => !language || String(curriculum.data.languageId) === language)
+      .filter((curriculum) => !term || curriculum.title.toLocaleLowerCase().includes(term))
+      .map((curriculum) => ({
+        id: curriculum.id,
+        title: curriculum.title,
+        languageId: Number(curriculum.data.languageId),
+        languageTitle: languageRows.find((lang) => lang.id === Number(curriculum.data.languageId))?.title ?? '—',
+      }));
+  }, [catalog.data, languageRows, language, search, me?.role, teacherLanguageIds.join(',')]);
 
   const rows = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -70,8 +71,9 @@ export default function LibraryPage() {
           <div className="relative"><Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><input className="field-input ps-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث عن عنوان المنهج..." data-testid="library-search" /></div>
         </div>
       </section>
-      {items.isLoading || languages.isLoading || (me?.role === 'teacher' && ownProfileQuery.isLoading) ? <ListSkeleton rows={5} /> :
+      {items.isLoading || catalog.isLoading || languages.isLoading || (me?.role === 'teacher' && ownProfileQuery.isLoading) ? <ListSkeleton rows={5} /> :
         items.isError ? <ErrorState message={errMsg(items.error)} onRetry={() => items.refetch()} /> :
+        catalog.isError ? <ErrorState message={errMsg(catalog.error)} onRetry={() => catalog.refetch()} /> :
         languages.isError ? <ErrorState message={errMsg(languages.error)} onRetry={() => languages.refetch()} /> :
         (me?.role === 'teacher' && ownProfileQuery.isError) ? <ErrorState message={errMsg(ownProfileQuery.error)} onRetry={() => ownProfileQuery.refetch()} /> :
         rows.length === 0 && catalogRows.length === 0 ? (
@@ -85,7 +87,7 @@ export default function LibraryPage() {
             {catalogRows.length > 0 && <section aria-labelledby="library-catalog-heading">
               <div className="mb-3"><h2 id="library-catalog-heading" className="text-lg font-extrabold">عناوين المناهج</h2><p className="text-sm text-muted-foreground">اختر منهجًا لطلب ملفاته من إدارة المدرسة عبر صفحة طلب المناهج.</p></div>
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {catalogRows.map((item) => <article key={`${item.languageId}-${item.title}`} className="flex items-start gap-3 rounded-2xl border border-card-border bg-card p-4 shadow-sm" data-testid={`curriculum-title-${item.languageId}-${item.title.replaceAll(' ','-')}`}>
+                {catalogRows.map((item) => <article key={item.id} className="flex items-start gap-3 rounded-2xl border border-card-border bg-card p-4 shadow-sm" data-testid={`curriculum-title-${item.id}`}>
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><BookOpen className="h-5 w-5" /></span>
                   <div className="min-w-0"><span className="text-xs font-bold text-primary">{item.languageTitle}</span><h3 className="mt-1 font-extrabold leading-6">{item.title}</h3><a href="/curriculum-requests" className="mt-2 inline-flex text-xs font-bold text-primary hover:underline">طلب هذا المنهج</a></div>
                 </article>)}

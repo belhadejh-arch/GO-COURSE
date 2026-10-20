@@ -7,7 +7,7 @@ export function fail(status: number, message: string): never {
   throw Object.assign(new Error(message), { status });
 }
 export const catalog = new Set(["languages", "levels", "courses", "plans"]);
-export const entities = new Set(["languages","levels","students","teachers","courses","enrollments","groups","sessions","lessons","resources","curriculumRequests","assignments","submissions","attendance","plans","subscriptions","payments","invoices","notifications","settings","audit","progress"]);
+export const entities = new Set(["languages","levels","students","teachers","courses","enrollments","groups","sessions","lessons","resources","curricula","curriculumRequests","assignments","submissions","attendance","plans","subscriptions","payments","invoices","notifications","settings","audit","progress"]);
 export const numberId = (value: unknown): number => Number(value) || 0;
 export const idList = (value: unknown): number[] => Array.isArray(value) ? value.map(Number).filter(Number.isInteger) : [];
 export type Access = { user: SchoolUser | null; profileId: number; rows: SchoolRow[]; courseIds: Set<number>; paidCourseIds: Set<number> };
@@ -57,6 +57,11 @@ export function canRead(a: Access, r: SchoolRow): boolean {
     return ["active","published"].includes(r.status);
   }
   if (!a.user) return false;
+  if (r.entity === "curricula") {
+    if (a.user.role !== "teacher" || r.status !== "published") return false;
+    const profile=a.rows.find(row=>row.id===a.profileId && row.entity==="teachers");
+    return idList(profile?.data.languageIds).includes(numberId(r.data.languageId));
+  }
   if (r.entity === "curriculumRequests") return a.user.role === "teacher" && r.ownerId === a.user.id;
   if (r.entity === "resources" && r.data.scope === "library") {
     if (a.user.role !== "teacher" || r.status !== "published") return false;

@@ -31,7 +31,7 @@ const schema = {
     message:"حدّد اللغة لملف المكتبة أو الدورة للمصدر الدراسي.",path:["languageId"],
   }),
   curriculumRequests:z.object({
-    curricula:z.array(z.string().trim().min(1).max(160)).min(1).max(50),
+    curriculumIds:z.array(id).max(50).optional(),curricula:z.array(z.string().trim().min(1).max(160)).max(50).optional(),
     levels:z.array(z.enum(["A1","A2","B1","B2","C1","C2"])).min(1),
     requestMedia:z.enum(["yes","no"]),telegramNumber:z.string().trim().max(64).optional(),
     teacherId:id.optional(),teacherName:z.string().max(200).optional(),teacherEmail:z.string().email().optional(),
@@ -46,13 +46,14 @@ const schema = {
   payments:z.object({studentId:optionalId,planId:id,courseId:optionalId,amount:z.coerce.number().min(0),currency:z.string().regex(/^[A-Z]{3}$/)}).passthrough(),
   languages:z.object({code:z.string().min(2).max(8)}).passthrough(),
   levels:z.object({languageId:id}).passthrough(),
+  curricula:z.object({languageId:id,languageCode:z.string().min(2).max(8).optional()}).passthrough(),
   notifications:z.object({message:z.string().min(1),read:z.boolean().optional()}).passthrough(),
   settings:z.object({}).passthrough(),
   progress:z.object({lessonId:id}).passthrough(),
 };
 const refs: Record<string,string> = { languageId:"languages",courseId:"courses",studentId:"students",teacherId:"teachers",groupId:"groups",planId:"plans",sessionId:"sessions",lessonId:"lessons",assignmentId:"assignments",paymentId:"payments" };
 const statuses: Record<string,string[]> = {
-  courses:["draft","published","paused","archived"], enrollments:["active","paused","completed","cancelled","archived"], sessions:["scheduled","completed","cancelled","published","archived"], lessons:["draft","published","archived"],resources:["draft","published","archived"],curriculumRequests:["pending","processing","fulfilled","rejected","archived"],assignments:["draft","published","archived"],
+  courses:["draft","published","paused","archived"], enrollments:["active","paused","completed","cancelled","archived"], sessions:["scheduled","completed","cancelled","published","archived"], lessons:["draft","published","archived"],resources:["draft","published","archived"],curricula:["published","archived"],curriculumRequests:["pending","processing","fulfilled","rejected","archived"],assignments:["draft","published","archived"],
   subscriptions:["pending","active","expired","cancelled","paused","archived"],payments:["pending","confirmed","rejected"],students:["active","invited","disabled","archived"],teachers:["active","invited","disabled","archived"],submissions:["pending","submitted","graded"],attendance:["active","archived"],
 };
 export function validateStatus(entity:string, status:string) {
@@ -65,6 +66,25 @@ export function validateData(a: Access, entity: string, input: Record<string,unk
   const parsed = selected?.safeParse(input);
   if (parsed && !parsed.success) fail(400, parsed.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("، "));
   const data: Record<string,unknown> = parsed?.success ? parsed.data : input;
+  if(entity==="curriculumRequests") {
+    if(existing) {
+      data.curriculumIds=existing.data.curriculumIds??data.curriculumIds??[];
+      data.curricula=existing.data.curricula??data.curricula??[];
+    } else {
+      if(!Array.isArray(data.curriculumIds)||data.curriculumIds.length===0)fail(400,"اختر المناهج من القائمة المرتبطة بقاعدة البيانات.");
+      const ids=idList(data.curriculumIds);
+      if(ids.length!==data.curriculumIds.length||new Set(ids).size!==ids.length)fail(400,"قائمة المناهج غير صالحة.");
+      const selected=ids.map(curriculumId=>a.rows.find(r=>r.id===curriculumId&&r.entity==="curricula"&&r.status==="published"));
+      if(selected.some(row=>!row))fail(400,"أحد المناهج المختارة غير متاح.");
+      if(a.user?.role==="teacher") {
+        const profile=a.rows.find(row=>row.id===a.profileId&&row.entity==="teachers");
+        const languageIds=idList(profile?.data.languageIds);
+        if(selected.some(row=>!languageIds.includes(numberId(row!.data.languageId))))fail(403,"يمكنك طلب مناهج اللغات التي تدرّسها فقط.");
+      }
+      data.curriculumIds=ids;
+      data.curricula=selected.map(row=>row!.title);
+    }
+  }
   for (const key of ["meetingUrl","recordingUrl"]) {
     if (data[key] && !/^https:\/\/[^\s]+$/i.test(String(data[key]))) fail(400,"الرابط يجب أن يكون رابط HTTPS صالحًا.");
   }

@@ -89,6 +89,7 @@ router.post("/school/records/:entity",async(req,res)=>{
   if (["invoices","audit","notifications"].includes(entity)) fail(403,"هذه السجلات تُنشأ تلقائيًا فقط.");
   const raw=parsed.data.data || {};
   canWrite(a,entity,raw);
+  let title=parsed.data.title;
   let status=parsed.data.status || (["courses","lessons","resources","assignments"].includes(entity)?"draft":["sessions"].includes(entity)?"scheduled":["payments","submissions","subscriptions","curriculumRequests"].includes(entity)?"pending":"active");
   if (a.user?.role==="student") status=entity==="progress"?"completed":"pending";
   if(entity==="curriculumRequests"&&a.user?.role==="teacher") {
@@ -99,10 +100,11 @@ router.post("/school/records/:entity",async(req,res)=>{
   }
   if (entity==="payments" && status!=="pending") fail(400,"أنشئ طلب الدفع أولًا ثم راجعه.");
   const data=validateData(a,entity,raw);
+  if(entity==="curriculumRequests"&&Array.isArray(data.curricula))title=`طلب مناهج: ${(data.curricula as string[]).slice(0,3).join("، ")}${(data.curricula as string[]).length>3?"…":""}`;
   if (entity==="submissions" && a.user?.role==="student") status=data.requiresReview?"submitted":"graded";
   validateStatus(entity,status);
   await checkFiles(a,data);
-  const row=await persist(a,entity,parsed.data.title,status,data);
+  const row=await persist(a,entity,title,status,data);
   res.status(201).json(GetSchoolRecordResponse.parse(serialize(a,row)));
 });
 router.patch("/school/records/:entity/:id",async(req,res)=>{

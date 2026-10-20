@@ -259,6 +259,15 @@ export async function persist(a:Access,entity:string,title:string,status:string,
       await tx.update(schoolUsers).set({role:String(data.role),permissions:Array.isArray(data.permissions)?data.permissions.map(String):[]}).where(eq(schoolUsers.id,String(data.userId)));
     }
     await audit(tx,a,existing?"تعديل":"إنشاء",row,prior);
+    if(entity==="curriculumRequests"&&!existing&&a.user?.role==="teacher") {
+      const admins=await tx.select().from(schoolUsers).where(eq(schoolUsers.role,"admin"));
+      const teacherName=String(data.teacherName||a.user?.name||"الأستاذ");
+      for(const admin of admins.filter(u=>u.enabled))await tx.insert(schoolRecords).values({
+        entity:"notifications",title:"طلب مناهج جديد",status:"active",ownerId:admin.id,
+        dedupeKey:`curriculum-request:${row.id}:${admin.id}`,
+        data:{message:`طلب مناهج جديد من ${teacherName}`,read:false,href:"/curriculum-requests"},
+      }).onConflictDoNothing();
+    }
     if (["courses","enrollments","sessions","lessons","resources","assignments","submissions","payments","subscriptions"].includes(entity)) await notify(tx,a,`${existing?"تم تحديث":"تمت إضافة"} ${row.title}`,entity==="courses"?{...row.data,courseId:row.id}:row.data,`${row.id}:${row.updatedAt.getTime()}:${status}`);
     return row;
   });

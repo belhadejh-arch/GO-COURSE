@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState, ErrorState, ListSkeleton, PageHeader, StatusBadge } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { useMe } from '@/hooks/use-school';
-import { CURRICULA_BY_LANGUAGE, curriculumLanguage } from '@/lib/curricula';
 import { errMsg, str } from '@/lib/school';
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -20,12 +19,13 @@ export default function CurriculumRequestsPage() {
   const profileEntity = 'teachers';
   const teachers = useListSchoolRecords(profileEntity);
   const languages = useListSchoolRecords('languages');
+  const catalog = useListSchoolRecords('curricula');
   const requests = useListSchoolRecords('curriculumRequests');
   const create = useCreateSchoolRecord();
   const update = useUpdateSchoolRecord();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [curricula, setCurricula] = useState<string[]>([]);
+  const [curricula, setCurricula] = useState<number[]>([]);
   const [levels, setLevels] = useState<string[]>([]);
   const [requestMedia, setRequestMedia] = useState<'yes' | 'no'>('no');
   const [telegramNumber, setTelegramNumber] = useState('');
@@ -33,25 +33,21 @@ export default function CurriculumRequestsPage() {
 
   const teacher = teachers.data?.find((r) => r.id === me?.profileId);
   const languageIds = Array.isArray(teacher?.data.languageIds) ? teacher.data.languageIds.map(Number) : [];
-  const allowedCurricula = useMemo(() => {
-    const titles = new Set<string>();
-    for (const lang of languages.data ?? []) {
-      if (languageIds.includes(lang.id)) {
-        const key = curriculumLanguage(lang.title, str(lang.data.code));
-        if (key) CURRICULA_BY_LANGUAGE[key].forEach((title) => titles.add(title));
-      }
-    }
-    return Array.from(titles);
-  }, [languages.data, languageIds.join(',')]);
+  const allowedCurricula = useMemo(() => (catalog.data ?? [])
+    .filter((record) => record.status === 'published')
+    .filter((record) => !isTeacher || languageIds.includes(Number(record.data.languageId))),
+  [catalog.data, isTeacher, languageIds.join(',')]);
   const rows = useMemo(() => (requests.data ?? []).slice().sort((a, b) => b.id - a.id), [requests.data]);
-  const setMulti = (values: string[], value: string, setter: (next: string[]) => void) => setter(values.includes(value) ? values.filter((v) => v !== value) : [...values, value]);
+  function setMulti<T>(values: T[], value: T, setter: (next: T[]) => void) {
+    setter(values.includes(value) ? values.filter((v) => v !== value) : [...values, value]);
+  }
 
   function submitRequest(e: FormEvent) {
     e.preventDefault();
     if (!curricula.length || !levels.length || (requestMedia==='yes'&&!telegramNumber.trim()) || submitting) return;
     setSubmitting(true);
-    const title = `طلب مناهج: ${curricula.join('، ')}`;
-    create.mutate({ entity: 'curriculumRequests', data: { title, status: 'pending', data: { curricula, levels, requestMedia, telegramNumber: telegramNumber.trim() } } }, {
+    const title = `طلب مناهج: ${allowedCurricula.filter((record) => curricula.includes(record.id)).map((record) => record.title).join('، ')}`;
+    create.mutate({ entity: 'curriculumRequests', data: { title, status: 'pending', data: { curriculumIds: curricula, levels, requestMedia, telegramNumber: telegramNumber.trim() } } }, {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: getListSchoolRecordsQueryKey('curriculumRequests') });
         toast({ title: 'تم إرسال طلبك إلى إدارة المدرسة' });
@@ -85,13 +81,14 @@ export default function CurriculumRequestsPage() {
         <form onSubmit={submitRequest} className="mb-7 grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
           <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><Sparkles className="h-5 w-5" /></span><div><h2 className="font-extrabold">ما الذي تحتاجه؟</h2><p className="text-xs text-muted-foreground">يمكن اختيار أكثر من منهج ومستوى.</p></div></div>
-            {languages.isLoading || teachers.isLoading ? <ListSkeleton rows={3} /> : languages.isError ? <ErrorState message={errMsg(languages.error)} onRetry={() => languages.refetch()} /> : (
+            {catalog.isLoading || languages.isLoading || teachers.isLoading ? <ListSkeleton rows={3} /> : catalog.isError ? <ErrorState message={errMsg(catalog.error)} onRetry={() => catalog.refetch()} /> : languages.isError ? <ErrorState message={errMsg(languages.error)} onRetry={() => languages.refetch()} /> : teachers.isError ? <ErrorState message={errMsg(teachers.error)} onRetry={() => teachers.refetch()} /> : (
               <>
                 <fieldset>
                   <legend className="mb-2 text-sm font-bold">عناوين المناهج</legend>
-                  {allowedCurricula.length ? <div className="grid gap-2 sm:grid-cols-2">
-                    {allowedCurricula.map((title) => <label key={title} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors ${curricula.includes(title) ? 'border-primary/50 bg-primary/5' : 'border-border hover:bg-muted/60'}`}>
-                      <input type="checkbox" className="accent-primary" checked={curricula.includes(title)} onChange={() => setMulti(curricula, title, setCurricula)} />{title}
+                    {allowedCurricula.length ? <div className="grid gap-2 sm:grid-cols-2">
+                    {allowedCurricula.map((record) => <label key={record.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition-colors ${curricula.includes(record.id) ? 'border-primary/50 bg-primary/5' : 'border-border hover:bg-muted/60'}`}>
+                      <input type="checkbox" className="accent-primary" checked={curricula.includes(record.id)} onChange={() => setMulti(curricula, record.id, setCurricula)} />
+                      <span>{record.title}<span className="ms-2 text-xs text-muted-foreground">{languages.data?.find((lang) => lang.id === Number(record.data.languageId))?.title}</span></span>
                     </label>)}
                   </div> : <p className="rounded-xl bg-secondary/70 p-4 text-sm text-muted-foreground">لم تُربط لغات التدريس بهذا الملف بعد. تواصل مع الإدارة لتحديث اللغات التي تدرّسها.</p>}
                 </fieldset>

@@ -18,7 +18,8 @@ const session=row(7,"sessions",{courseId:5,teacherId:2,startsAt:"2030-01-01T17:0
 const lesson=row(8,"lessons",{courseId:5,number:1,body:"Lesson content"},"published");
 const assignment=row(9,"assignments",{courseId:5,dueDate:"2030-02-01T17:00:00Z",questions:[{type:"multiple_choice",prompt:"Choose A",options:["A","B"],correctAnswer:"A",points:2},{type:"true_false",prompt:"True?",correctAnswer:"true",points:1}]},"published");
 const plan=row(10,"plans",{amount:5000,currency:"DZD",durationDays:30,courseIds:[5]});
-const rows=[language,teacher,student,otherStudent,course,enrollment,session,lesson,assignment,plan];
+const curriculum=row(11,"curricula",{languageId:1,languageCode:"en"},"published");
+const rows=[language,teacher,student,otherStudent,course,enrollment,session,lesson,assignment,plan,curriculum];
 const user=(role:string,permissions:string[]=[]):SchoolUser=>({id:role==="admin"?"owner-test":`${role}-test`,email:`${role}@example.invalid`,name:"Test account",role,permissions,enabled:true,createdAt:new Date()});
 const context=(role:string):Access=>({user:role==="guest"?null:user(role),profileId:role==="student"?3:role==="teacher"?2:0,rows,courseIds:new Set(role==="student"||role==="teacher"?[5]:[]),paidCourseIds:new Set(role==="student"?[5]:[])});
 const admin=context("admin"),studentAccess=context("student"),teacherAccess=context("teacher");
@@ -131,14 +132,22 @@ test("teacher can create a curriculum request but cannot change its status",()=>
   assert.equal(canRead(studentAccess,request),false);
   expectStatus(()=>canWrite(teacherAccess,"curriculumRequests",request.data,request),403);
 });
+test("teacher catalog view is restricted to their assigned languages",()=>{
+  assert.equal(canRead(teacherAccess,curriculum),true);
+  assert.equal(canRead(studentAccess,curriculum),false);
+  assert.equal(canRead(admin,curriculum),true);
+});
 test("teacher can edit only their own profile record",()=>{
   assert.doesNotThrow(()=>canWrite(teacherAccess,"teachers",{email:"new@example.invalid"},teacher));
   expectStatus(()=>canWrite(teacherAccess,"teachers",{email:"other@example.invalid"},row(64,"teachers")),403);
 });
 test("curriculum request requires Telegram when media is requested",()=>{
-  const data={curricula:["English File"],levels:["A1","B1"],requestMedia:"yes",telegramNumber:"+213555000000",teacherId:2,teacherName:"Test Teacher",teacherEmail:"teacher@example.invalid"};
-  assert.deepEqual(validateData(teacherAccess,"curriculumRequests",data).levels,["A1","B1"]);
+  const data={curriculumIds:[11],levels:["A1","B1"],requestMedia:"yes",telegramNumber:"+213555000000",teacherId:2,teacherName:"Test Teacher",teacherEmail:"teacher@example.invalid"};
+  const parsed=validateData(teacherAccess,"curriculumRequests",data);
+  assert.deepEqual(parsed.levels,["A1","B1"]);
+  assert.deepEqual(parsed.curricula,["Test curricula 11"]);
   expectStatus(()=>validateData(teacherAccess,"curriculumRequests",{...data,telegramNumber:""}),400);
+  expectStatus(()=>validateData(teacherAccess,"curriculumRequests",{...data,curriculumIds:[999]}),400);
 });
 test("library resources require a language and teachers cannot publish library files",()=>{
   const resource={scope:"library",languageId:1,objectPath:"/objects/book.pdf",contentType:"application/pdf"};

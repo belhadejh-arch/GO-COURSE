@@ -1,6 +1,7 @@
 import { and,eq,sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { schoolRecords,schoolLinks } from "./schema";
+import { CURRICULA_BY_LANGUAGE_CODE } from "./curriculum-catalog";
 
 const languages=[
   ["en","الإنجليزية"],["fr","الفرنسية"],["tr","التركية"],["ru","الروسية"],
@@ -19,6 +20,18 @@ export async function seedCatalog(db:Pick<NodePgDatabase,"select"|"insert">){
       if(!oldLevel)await db.insert(schoolRecords).values({entity:"levels",title:level,status:"active",data:{languageId:language.id,code:level},dedupeKey:`catalog:level:${code}:${level}`}).onConflictDoNothing();
       const [row]=oldLevel?[oldLevel]:await db.select().from(schoolRecords).where(eq(schoolRecords.dedupeKey,`catalog:level:${code}:${level}`));
       if(row)await db.insert(schoolLinks).values({fromId:row.id,toId:language.id,kind:"languageId"}).onConflictDoNothing();
+    }
+    for(const title of CURRICULA_BY_LANGUAGE_CODE[code]??[]){
+      const dedupeKey=`catalog:curriculum:${code}:${encodeURIComponent(title)}`;
+      let [curriculum]=await db.select().from(schoolRecords).where(eq(schoolRecords.dedupeKey,dedupeKey));
+      if(!curriculum){
+        await db.insert(schoolRecords).values({
+          entity:"curricula",title,status:"published",data:{languageId:language.id,languageCode:code},dedupeKey,
+        }).onConflictDoNothing();
+        [curriculum]=await db.select().from(schoolRecords).where(eq(schoolRecords.dedupeKey,dedupeKey));
+      }
+      if(!curriculum)throw new Error("Unable to initialize curriculum catalog.");
+      await db.insert(schoolLinks).values({fromId:curriculum.id,toId:language.id,kind:"languageId"}).onConflictDoNothing();
     }
   }
 }
