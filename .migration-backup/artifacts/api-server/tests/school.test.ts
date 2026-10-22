@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canRead, canWrite, serialize, type Access } from "../src/lib/school-access";
+import { canArchiveRecord, canRead, canWrite, serialize, type Access } from "../src/lib/school-access";
 import { validateData, validateStatus } from "../src/lib/school-validation";
 import { dedupeKey } from "../src/lib/school-service";
 import { type SchoolRow, type SchoolUser, pool } from "@workspace/db";
@@ -131,6 +131,16 @@ test("teacher can create a curriculum request but cannot change its status",()=>
   assert.equal(canRead(teacherAccess,request),true);
   assert.equal(canRead(studentAccess,request),false);
   expectStatus(()=>canWrite(teacherAccess,"curriculumRequests",request.data,request),403);
+  assert.doesNotThrow(()=>canArchiveRecord(teacherAccess,request));
+});
+test("administrator can archive protected and linked record types",()=>{
+  for(const entity of ["payments","invoices","subscriptions","audit","submissions","teachers","courses","groups"]) {
+    assert.doesNotThrow(()=>canArchiveRecord(admin,row(200+entity.length,entity,{}, "confirmed")));
+  }
+});
+test("teacher cannot archive another teacher's curriculum request",()=>{
+  const request={...row(65,"curriculumRequests",{},"pending"),ownerId:"another-teacher"};
+  expectStatus(()=>canArchiveRecord(teacherAccess,request),403);
 });
 test("teacher catalog view is restricted to their assigned languages",()=>{
   assert.equal(canRead(teacherAccess,curriculum),true);

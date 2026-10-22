@@ -19,7 +19,10 @@ export function useAccess() {
   const gated = (_e: string) => role === 'staff';
   const canRead = (e: string) => !gated(e) || perms.includes(`${e}:read`) || perms.includes(`${e}:write`);
   const canWrite = (cfg: EntityConfig) => cfg.write.includes(role) && (!gated(cfg.key) || perms.includes(`${cfg.key}:write`));
-  return { role, canRead, canWrite };
+  const canArchive = (cfg: EntityConfig) => role === 'admin' || (role === 'staff'
+    ? perms.includes(`${cfg.key}:write`)
+    : cfg.write.includes(role));
+  return { role, canRead, canWrite, canArchive };
 }
 
 export function useLookups(entities: string[]) {

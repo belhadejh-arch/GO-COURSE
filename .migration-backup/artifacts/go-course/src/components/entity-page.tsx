@@ -109,7 +109,7 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
     if (!toArchive) return;
     archive.mutate({ entity, id: toArchive.id }, {
       onSuccess: () => { invalidate(entity, toArchive.id); toast({ title: 'تمت الأرشفة' }); setToArchive(null); },
-      onError: (e) => { toast({ title: 'تعذّرت الأرشفة', description: errMsg(e), variant: 'destructive' }); setToArchive(null); },
+      onError: (e) => { toast({ title: 'تعذّرت الأرشفة', description: errMsg(e), variant: 'destructive' }); },
     });
   };
   const resetProfileLogin = (r:SchoolRecord) => {
@@ -132,7 +132,7 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
           <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input className="field-input ps-9" placeholder={`ابحث في ${cfg.plural}`} value={q} onChange={(e) => setQ(e.target.value)} data-testid="input-search" />
         </div>
-        {cfg.statuses.length > 1 && (
+        {(cfg.statuses.length > 1 || role === 'admin' || role === 'staff') && (
           <select className="field-input w-auto" value={statusF} onChange={(e) => setStatusF(e.target.value)} data-testid="select-status-filter">
             <option value="">كل الحالات النشطة</option>
             {cfg.statuses.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -226,8 +226,8 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
                         <Button size="icon" variant="ghost" className="h-8 w-8" title={rowWritable(r) ? 'تعديل' : 'عرض'} onClick={() => openRecord(r)} data-testid={`button-edit-${r.id}`}>
                           {rowWritable(r) ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
-                        {writable && (cfg.archive ?? cfg.write).includes(role) && rowWritable(r) && r.status !== 'archived' && (
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" title="أرشفة" onClick={() => setToArchive(r)} data-testid={`button-archive-${r.id}`}><Archive className="h-4 w-4" /></Button>
+                        {access.canArchive(cfg) && r.status !== 'archived' && (
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" title="أرشفة" onClick={() => setToArchive(r)} disabled={archive.isPending} data-testid={`button-archive-${r.id}`}><Archive className="h-4 w-4" /></Button>
                         )}
                       </div>
                     </td>
@@ -286,11 +286,11 @@ export function EntityPage({ entity, embedded }: { entity: string; embedded?: bo
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader className="text-start">
             <AlertDialogTitle>أرشفة «{toArchive?.title}»؟</AlertDialogTitle>
-            <AlertDialogDescription>سيُنقل السجل إلى الأرشيف ولن يظهر في القوائم النشطة، ويمكنك استعراضه من مرشّح الحالة.</AlertDialogDescription>
+            <AlertDialogDescription>سيُنقل السجل إلى الأرشيف مع الاحتفاظ ببياناته وسجله المالي أو التعليمي. لن تُحذف السجلات المرتبطة، ويمكنك استعراض المؤرشف من مرشّح الحالة.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel data-testid="button-archive-cancel">تراجع</AlertDialogCancel>
-            <AlertDialogAction onClick={doArchive} data-testid="button-archive-confirm">أرشفة</AlertDialogAction>
+            <AlertDialogAction onClick={(event) => { event.preventDefault(); doArchive(); }} disabled={archive.isPending} data-testid="button-archive-confirm">{archive.isPending ? 'جارٍ الأرشفة...' : 'أرشفة'}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

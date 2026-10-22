@@ -109,6 +109,12 @@ export function canWrite(a: Access, entity: string, data: Record<string, unknown
   if (entity === "notifications" && existing?.ownerId === a.user.id) return;
   fail(403, "ليس لديك صلاحية تنفيذ هذه العملية.");
 }
+export function canArchiveRecord(a: Access, row: SchoolRow) {
+  if (!a.user) fail(401, "سجّل الدخول أولًا.");
+  if (a.user.role === "admin") return;
+  if (a.user.role === "teacher" && row.entity === "curriculumRequests" && row.ownerId === a.user.id) return;
+  canWrite(a, row.entity, row.data, row);
+}
 export function serialize(a: Access, row: SchoolRow) {
   const data = { ...row.data };
   if (row.entity === "courses" && !privileged(a,"courses") && !a.courseIds.has(row.id)) {

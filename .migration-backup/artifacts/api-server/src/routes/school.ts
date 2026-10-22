@@ -7,9 +7,9 @@ import {
   GetSchoolRecordParams, ListSchoolRecordsResponse, GetSchoolRecordResponse,
   GetSchoolMeResponse, GetSchoolSummaryResponse, ExportSchoolReportQueryParams,
 } from "@workspace/api-zod";
-import { access, adminConfigured, canRead, canWrite, catalog, entities, fail, numberId, privileged, serialize } from "../lib/school-access";
+import { access, adminConfigured, canArchiveRecord, canRead, canWrite, catalog, entities, fail, numberId, privileged, serialize } from "../lib/school-access";
 import { validateData, validateStatus } from "../lib/school-validation";
-import { persist } from "../lib/school-service";
+import { archiveSchoolRecord, persist } from "../lib/school-service";
 import { SchoolFileStorage, validFilePrefix } from "../lib/database-files";
 import { fileTransferUrl,verifyFileToken } from "../lib/file-tokens";
 
@@ -153,10 +153,8 @@ router.delete("/school/records/:entity/:id",async(req,res)=>{
   const entity=entityOf(req.params.entity),a=await access(req);
   const row=a.rows.find(r=>r.id===numberId(req.params.id) && r.entity===entity);
   if (!row || !canRead(a,row)) fail(404,"السجل غير موجود.");
-  canWrite(a,entity,row.data,row);
-  if (["payments","invoices","subscriptions","audit","submissions"].includes(entity)) fail(403,"لا يمكن أرشفة السجلات المالية والتعليمية الحساسة.");
-  if (["teachers","courses","groups"].includes(entity) && a.rows.some(s=>s.entity==="sessions" && s.status==="scheduled" && Date.parse(String(s.data.startsAt))>Date.now() && (s.data.teacherId===row.id || s.data.courseId===row.id || s.data.groupId===row.id))) fail(409,"توجد حصص مستقبلية مرتبطة؛ أعد جدولتها أو إسنادها أولًا.");
-  const updated=await persist(a,entity,row.title,"archived",row.data,row);
+  canArchiveRecord(a,row);
+  const updated=await archiveSchoolRecord(a,row);
   res.json(serialize(a,updated));
 });
 router.post("/school/notifications/read",async(req,res)=>{

@@ -36,6 +36,51 @@ async function audit(tx:Tx,a:Access,action:string,row:SchoolRow,previous?:School
     data:{actor:a.user!.name,actorId:a.user!.id,action,recordId:row.id,entity:row.entity,previous:previous ? {title:previous.title,status:previous.status,data:previous.data} : null},
   });
 }
+export async function archiveSchoolRecord(a:Access, record:SchoolRow) {
+  if (!a.user) fail(401, "سجّل الدخول أولًا.");
+  return db.transaction(async tx => {
+    await tx.execute(sql`select pg_advisory_xact_lock(740234)`);
+    const [current] = await tx.select().from(schoolRecords)
+      .where(and(eq(schoolRecords.id,record.id),eq(schoolRecords.entity,record.entity))).for("update");
+    if (!current) fail(404,"السجل غير موجود.");
+    if (current.status === "archived") return current;
+    const [updated] = await tx.update(schoolRecords)
+      .set({status:"archived",updatedAt:new Date()})
+      .where(eq(schoolRecords.id,current.id)).returning();
+    if (!updated) fail(404,"السجل غير موجود.");
+
+    if (["students","teachers"].includes(current.entity)) {
+      let accountId=String(current.data.accountId||"");
+      if (!accountId && current.data.email) {
+        const [linkedUser]=await tx.select().from(schoolUsers).where(eq(schoolUsers.email,String(current.data.email).toLowerCase()));
+        accountId=linkedUser?.id||"";
+      }
+      if (accountId) {
+        await tx.update(schoolUsers).set({enabled:false}).where(eq(schoolUsers.id,accountId));
+        await tx.delete(schoolSessions).where(eq(schoolSessions.userId,accountId));
+      }
+    }
+
+    if (current.entity === "enrollments") {
+      const courseId=numberId(current.data.courseId);
+      const [course]=await tx.select().from(schoolRecords)
+        .where(and(eq(schoolRecords.id,courseId),eq(schoolRecords.entity,"courses"))).for("update");
+      if (course) {
+        const enrollments=await tx.select().from(schoolRecords).where(eq(schoolRecords.entity,"enrollments"));
+        const studentIds=enrollments
+          .filter(item=>item.id!==current.id&&item.status!=="archived"&&item.status!=="cancelled"&&numberId(item.data.courseId)===courseId)
+          .map(item=>numberId(item.data.studentId));
+        const updatedCourse={...course,data:{...course.data,studentIds:[...new Set(studentIds)]},updatedAt:new Date()};
+        await tx.update(schoolRecords).set({data:updatedCourse.data,updatedAt:updatedCourse.updatedAt})
+          .where(eq(schoolRecords.id,course.id));
+        await saveLinks(tx,updatedCourse);
+      }
+    }
+
+    await audit(tx,a,"أرشفة",updated,current);
+    return updated;
+  });
+}
 async function generateLessons(tx:Tx,a:Access,course:SchoolRow) {
   const total = Number(course.data.totalSessions);
   const days = idList(course.data.days);
