@@ -1,10 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
-  "compilerOptions": {
-    "lib": ["es2022", "dom", "dom.iterable"],
-    "types": ["node"]
-  },
   "files": [],
   "references": [
     {
