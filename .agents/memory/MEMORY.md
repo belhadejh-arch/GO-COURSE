@@ -1,1 +1,2 @@
 - [Universal record archiving](record-archiving.md) — Keep archive available across record types while preserving history and related records.
+- [OpenAPI query generation](openapi-query-generation.md) — Avoid duplicate generated parameter types when GET operations mix path and query parameters.
