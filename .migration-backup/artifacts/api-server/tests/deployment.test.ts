@@ -2,7 +2,11 @@ import { test,after } from "node:test";
 import assert from "node:assert/strict";
 import { readFile,readdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { db,pool,schoolRecords,schoolUsers,schoolFiles,schoolFileContents } from "@workspace/db";
+import {
+  chatAttachments, chatConversationMembers, chatConversations, chatMessages,
+  chatReadStates, chatReports, db, pool, schoolRecords, schoolUsers,
+  schoolFiles, schoolFileContents,
+} from "@workspace/db";
 import { sql,eq } from "drizzle-orm";
 import { seedCatalog } from "../../../lib/db/src/seed-catalog";
 import { CURRICULA_BY_LANGUAGE_CODE } from "../../../lib/db/src/curriculum-catalog";
@@ -15,6 +19,10 @@ test("deployment migration, catalog seeding, and private binary storage work wit
   const migrationDir=new URL("../../../lib/db/migrations/",import.meta.url);
   const migrationFiles=(await readdir(migrationDir)).filter(file=>/^\d+_.*\.sql$/.test(file)).sort();
   const rollback=new Error("intentional test rollback");
+const isImmutableMessageError=(error:unknown)=>{
+  const value=error as {code?:string;cause?:{code?:string}};
+  return value.code==="P0001"||value.cause?.code==="P0001";
+};
   await assert.rejects(db.transaction(async tx=>{
     await tx.execute(sql.raw(`CREATE SCHEMA "${name}"`));
     await tx.execute(sql.raw(`SET LOCAL search_path TO "${name}"`));
@@ -35,6 +43,35 @@ test("deployment migration, catalog seeding, and private binary storage work wit
     await tx.insert(schoolFileContents).values({objectPath:path,bytes});
     const [stored]=await tx.select().from(schoolFileContents).where(eq(schoolFileContents.objectPath,path));
     assert.deepEqual(stored.bytes,bytes);
+    const [course]=await tx.insert(schoolRecords).values({
+      entity:"courses",title:"Chat migration test",status:"published",data:{teacherIds:[]},
+    }).returning();
+    const [conversation]=await tx.insert(chatConversations).values({
+      kind:"group",scopeKey:"deployment-test-chat",courseId:course.id,title:"Test chat",
+    }).returning();
+    const [message]=await tx.insert(chatMessages).values({
+      conversationId:conversation.id,senderId:"deployment-test",body:"immutable test",
+    }).returning();
+    await tx.insert(chatConversationMembers).values({
+      conversationId:conversation.id,userId:"deployment-test",role:"student",canSend:true,
+    });
+    await tx.insert(chatAttachments).values({
+      conversationId:conversation.id,messageId:message.id,uploaderId:"deployment-test",
+      objectPath:path,name:"test.pdf",contentType:"application/pdf",size:bytes.length,
+      status:"attached",expiresAt:new Date(Date.now()+60_000),uploadedAt:new Date(),
+    });
+    await tx.insert(chatReadStates).values({
+      conversationId:conversation.id,userId:"deployment-test",lastReadMessageId:message.id,
+    });
+    await tx.insert(chatReports).values({
+      conversationId:conversation.id,messageId:message.id,reporterId:"deployment-test",reason:"other",
+    });
+    await assert.rejects(tx.transaction(async nested=>{
+      await nested.update(chatMessages).set({body:"edited"}).where(eq(chatMessages.id,message.id));
+    }),isImmutableMessageError);
+    await assert.rejects(tx.transaction(async nested=>{
+      await nested.delete(chatMessages).where(eq(chatMessages.id,message.id));
+    }),isImmutableMessageError);
     throw rollback;
   }),error=>error===rollback);
   const result=await db.execute(sql`select to_regnamespace(${name}) as schema`);

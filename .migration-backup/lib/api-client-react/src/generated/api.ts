@@ -25,8 +25,22 @@ import type {
   AuthResetInput,
   AuthSession,
   ChangeSchoolPassword200,
+  ChatAdminSearch,
+  ChatAttachment,
+  ChatConversation,
+  ChatMessage,
+  ChatMessageInput,
+  ChatMessagePage,
+  ChatMessageSearchInput,
+  ChatReadResult,
+  ChatReport,
+  ChatReportInput,
+  ChatReportReviewInput,
+  ChatUpload,
+  ChatUploadInput,
   ExportSchoolReportParams,
   HealthStatus,
+  ListSchoolChatsParams,
   LogoutSchoolAccount200,
   ResetSchoolPassword200,
   SchoolAccount,
@@ -34,6 +48,7 @@ import type {
   SchoolRecord,
   SchoolRecordInput,
   SchoolSummary,
+  SearchSchoolChatDirectoryParams,
   UploadInput,
   UploadResult
 } from './api.schemas';
@@ -1268,6 +1283,1073 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRequestSchoolUploadMutationOptions(options));
+    }
+
+export const getListSchoolChatsUrl = (params?: ListSchoolChatsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/school/chats?${stringifiedParams}` : `/api/school/chats`
+}
+
+export const listSchoolChats = async (params?: ListSchoolChatsParams, options?: Parameters<typeof customFetch>[1]): Promise<ChatConversation[]> => {
+
+  return customFetch<ChatConversation[]>(getListSchoolChatsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSchoolChatsQueryKey = (params?: ListSchoolChatsParams,) => {
+    return [
+    `/api/school/chats`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSchoolChatsQueryOptions = <TData = Awaited<ReturnType<typeof listSchoolChats>>, TError = ErrorType<unknown>>(params?: ListSchoolChatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSchoolChats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSchoolChatsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSchoolChats>>> = ({ signal }) => listSchoolChats(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSchoolChats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSchoolChatsQueryResult = NonNullable<Awaited<ReturnType<typeof listSchoolChats>>>
+export type ListSchoolChatsQueryError = ErrorType<unknown>
+
+
+
+export function useListSchoolChats<TData = Awaited<ReturnType<typeof listSchoolChats>>, TError = ErrorType<unknown>>(
+ params?: ListSchoolChatsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSchoolChats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSchoolChatsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchSchoolChatDirectoryUrl = (params: SearchSchoolChatDirectoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/school/chats/admin/search?${stringifiedParams}` : `/api/school/chats/admin/search`
+}
+
+export const searchSchoolChatDirectory = async (params: SearchSchoolChatDirectoryParams, options?: Parameters<typeof customFetch>[1]): Promise<ChatAdminSearch> => {
+
+  return customFetch<ChatAdminSearch>(getSearchSchoolChatDirectoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchSchoolChatDirectoryQueryKey = (params?: SearchSchoolChatDirectoryParams,) => {
+    return [
+    `/api/school/chats/admin/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchSchoolChatDirectoryQueryOptions = <TData = Awaited<ReturnType<typeof searchSchoolChatDirectory>>, TError = ErrorType<unknown>>(params: SearchSchoolChatDirectoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchSchoolChatDirectory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchSchoolChatDirectoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchSchoolChatDirectory>>> = ({ signal }) => searchSchoolChatDirectory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchSchoolChatDirectory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchSchoolChatDirectoryQueryResult = NonNullable<Awaited<ReturnType<typeof searchSchoolChatDirectory>>>
+export type SearchSchoolChatDirectoryQueryError = ErrorType<unknown>
+
+
+
+export function useSearchSchoolChatDirectory<TData = Awaited<ReturnType<typeof searchSchoolChatDirectory>>, TError = ErrorType<unknown>>(
+ params: SearchSchoolChatDirectoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchSchoolChatDirectory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchSchoolChatDirectoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListChatMessagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/messages`
+}
+
+export const listChatMessages = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ChatMessagePage> => {
+
+  return customFetch<ChatMessagePage>(getListChatMessagesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListChatMessagesQueryKey = (id: number,) => {
+    return [
+    `/api/school/chats/${id}/messages`
+    ] as const;
+    }
+
+
+export const getListChatMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listChatMessages>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listChatMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListChatMessagesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listChatMessages>>> = ({ signal }) => listChatMessages(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listChatMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListChatMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listChatMessages>>>
+export type ListChatMessagesQueryError = ErrorType<unknown>
+
+
+
+export function useListChatMessages<TData = Awaited<ReturnType<typeof listChatMessages>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listChatMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListChatMessagesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateChatMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/messages`
+}
+
+export const createChatMessage = async (id: number,
+    chatMessageInput: ChatMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<ChatMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ChatMessage>(getCreateChatMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatMessageInput)
+  }
+);}
+
+
+
+
+
+export const getCreateChatMessageMutationKey = () => ['createChatMessage'] as const;
+
+export const getCreateChatMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChatMessage>>, TError,CreateChatMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createChatMessage>>, TError,CreateChatMessageMutationVariables, TContext> => {
+
+const mutationKey = getCreateChatMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createChatMessage>>, CreateChatMessageMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createChatMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateChatMessageMutationResult = NonNullable<Awaited<ReturnType<typeof createChatMessage>>>
+    export type CreateChatMessageMutationBody = BodyType<ChatMessageInput>
+    export type CreateChatMessageMutationError = ErrorType<unknown>
+    export type CreateChatMessageMutationVariables = {id: number;data: BodyType<ChatMessageInput>}
+
+    export const useCreateChatMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChatMessage>>, TError,CreateChatMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createChatMessage>>,
+        TError,
+        CreateChatMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateChatMessageMutationOptions(options));
+    }
+
+export const getListOlderChatMessagesUrl = (id: number,
+    before: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/messages/before/${before}`
+}
+
+export const listOlderChatMessages = async (id: number,
+    before: number, options?: Parameters<typeof customFetch>[1]): Promise<ChatMessagePage> => {
+
+  return customFetch<ChatMessagePage>(getListOlderChatMessagesUrl(id,before),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOlderChatMessagesQueryKey = (id: number,
+    before: number,) => {
+    return [
+    `/api/school/chats/${id}/messages/before/${before}`
+    ] as const;
+    }
+
+
+export const getListOlderChatMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listOlderChatMessages>>, TError = ErrorType<unknown>>(id: number,
+    before: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOlderChatMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOlderChatMessagesQueryKey(id,before);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOlderChatMessages>>> = ({ signal }) => listOlderChatMessages(id,before, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && before !== null && before !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOlderChatMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOlderChatMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listOlderChatMessages>>>
+export type ListOlderChatMessagesQueryError = ErrorType<unknown>
+
+
+
+export function useListOlderChatMessages<TData = Awaited<ReturnType<typeof listOlderChatMessages>>, TError = ErrorType<unknown>>(
+ id: number,
+    before: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOlderChatMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOlderChatMessagesQueryOptions(id,before,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchChatMessagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/messages/search`
+}
+
+export const searchChatMessages = async (id: number,
+    chatMessageSearchInput: ChatMessageSearchInput, options?: Parameters<typeof customFetch>[1]): Promise<ChatMessagePage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ChatMessagePage>(getSearchChatMessagesUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatMessageSearchInput)
+  }
+);}
+
+
+
+
+
+export const getSearchChatMessagesMutationKey = () => ['searchChatMessages'] as const;
+
+export const getSearchChatMessagesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof searchChatMessages>>, TError,SearchChatMessagesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof searchChatMessages>>, TError,SearchChatMessagesMutationVariables, TContext> => {
+
+const mutationKey = getSearchChatMessagesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof searchChatMessages>>, SearchChatMessagesMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  searchChatMessages(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SearchChatMessagesMutationResult = NonNullable<Awaited<ReturnType<typeof searchChatMessages>>>
+    export type SearchChatMessagesMutationBody = BodyType<ChatMessageSearchInput>
+    export type SearchChatMessagesMutationError = ErrorType<unknown>
+    export type SearchChatMessagesMutationVariables = {id: number;data: BodyType<ChatMessageSearchInput>}
+
+    export const useSearchChatMessages = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof searchChatMessages>>, TError,SearchChatMessagesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof searchChatMessages>>,
+        TError,
+        SearchChatMessagesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSearchChatMessagesMutationOptions(options));
+    }
+
+export const getMarkChatReadUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/read`
+}
+
+export const markChatRead = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ChatReadResult> => {
+
+  return customFetch<ChatReadResult>(getMarkChatReadUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkChatReadMutationKey = () => ['markChatRead'] as const;
+
+export const getMarkChatReadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markChatRead>>, TError,MarkChatReadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markChatRead>>, TError,MarkChatReadMutationVariables, TContext> => {
+
+const mutationKey = getMarkChatReadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markChatRead>>, MarkChatReadMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  markChatRead(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkChatReadMutationResult = NonNullable<Awaited<ReturnType<typeof markChatRead>>>
+
+    export type MarkChatReadMutationError = ErrorType<unknown>
+    export type MarkChatReadMutationVariables = {id: number}
+
+    export const useMarkChatRead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markChatRead>>, TError,MarkChatReadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markChatRead>>,
+        TError,
+        MarkChatReadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarkChatReadMutationOptions(options));
+    }
+
+export const getCreateChatUploadUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/uploads`
+}
+
+export const createChatUpload = async (id: number,
+    chatUploadInput: ChatUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<ChatUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ChatUpload>(getCreateChatUploadUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatUploadInput)
+  }
+);}
+
+
+
+
+
+export const getCreateChatUploadMutationKey = () => ['createChatUpload'] as const;
+
+export const getCreateChatUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChatUpload>>, TError,CreateChatUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createChatUpload>>, TError,CreateChatUploadMutationVariables, TContext> => {
+
+const mutationKey = getCreateChatUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createChatUpload>>, CreateChatUploadMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createChatUpload(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateChatUploadMutationResult = NonNullable<Awaited<ReturnType<typeof createChatUpload>>>
+    export type CreateChatUploadMutationBody = BodyType<ChatUploadInput>
+    export type CreateChatUploadMutationError = ErrorType<unknown>
+    export type CreateChatUploadMutationVariables = {id: number;data: BodyType<ChatUploadInput>}
+
+    export const useCreateChatUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChatUpload>>, TError,CreateChatUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createChatUpload>>,
+        TError,
+        CreateChatUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateChatUploadMutationOptions(options));
+    }
+
+export const getCompleteChatUploadUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/uploads/${id}/complete`
+}
+
+export const completeChatUpload = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<ChatAttachment> => {
+
+  return customFetch<ChatAttachment>(getCompleteChatUploadUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteChatUploadMutationKey = () => ['completeChatUpload'] as const;
+
+export const getCompleteChatUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeChatUpload>>, TError,CompleteChatUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeChatUpload>>, TError,CompleteChatUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteChatUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeChatUpload>>, CompleteChatUploadMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  completeChatUpload(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteChatUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeChatUpload>>>
+
+    export type CompleteChatUploadMutationError = ErrorType<unknown>
+    export type CompleteChatUploadMutationVariables = {id: number}
+
+    export const useCompleteChatUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeChatUpload>>, TError,CompleteChatUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeChatUpload>>,
+        TError,
+        CompleteChatUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteChatUploadMutationOptions(options));
+    }
+
+export const getDownloadChatAttachmentUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/attachments/${id}/file`
+}
+
+export const downloadChatAttachment = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<Blob | void> => {
+
+  return customFetch<Blob | void>(getDownloadChatAttachmentUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadChatAttachmentQueryKey = (id: number,) => {
+    return [
+    `/api/school/chats/attachments/${id}/file`
+    ] as const;
+    }
+
+
+export const getDownloadChatAttachmentQueryOptions = <TData = Awaited<ReturnType<typeof downloadChatAttachment>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadChatAttachment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadChatAttachmentQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadChatAttachment>>> = ({ signal }) => downloadChatAttachment(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadChatAttachment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadChatAttachmentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadChatAttachment>>>
+export type DownloadChatAttachmentQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadChatAttachment<TData = Awaited<ReturnType<typeof downloadChatAttachment>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadChatAttachment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadChatAttachmentQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetChatParticipantAvatarUrl = (userId: string,) => {
+
+
+
+
+  return `/api/school/chats/participants/${userId}/avatar`
+}
+
+export const getChatParticipantAvatar = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetChatParticipantAvatarUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetChatParticipantAvatarQueryKey = (userId: string,) => {
+    return [
+    `/api/school/chats/participants/${userId}/avatar`
+    ] as const;
+    }
+
+
+export const getGetChatParticipantAvatarQueryOptions = <TData = Awaited<ReturnType<typeof getChatParticipantAvatar>>, TError = ErrorType<unknown>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getChatParticipantAvatar>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChatParticipantAvatarQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChatParticipantAvatar>>> = ({ signal }) => getChatParticipantAvatar(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChatParticipantAvatar>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetChatParticipantAvatarQueryResult = NonNullable<Awaited<ReturnType<typeof getChatParticipantAvatar>>>
+export type GetChatParticipantAvatarQueryError = ErrorType<unknown>
+
+
+
+export function useGetChatParticipantAvatar<TData = Awaited<ReturnType<typeof getChatParticipantAvatar>>, TError = ErrorType<unknown>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getChatParticipantAvatar>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetChatParticipantAvatarQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateChatReportUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/${id}/reports`
+}
+
+export const createChatReport = async (id: number,
+    chatReportInput: ChatReportInput, options?: Parameters<typeof customFetch>[1]): Promise<ChatReport> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ChatReport>(getCreateChatReportUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatReportInput)
+  }
+);}
+
+
+
+
+
+export const getCreateChatReportMutationKey = () => ['createChatReport'] as const;
+
+export const getCreateChatReportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChatReport>>, TError,CreateChatReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createChatReport>>, TError,CreateChatReportMutationVariables, TContext> => {
+
+const mutationKey = getCreateChatReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createChatReport>>, CreateChatReportMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createChatReport(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateChatReportMutationResult = NonNullable<Awaited<ReturnType<typeof createChatReport>>>
+    export type CreateChatReportMutationBody = BodyType<ChatReportInput>
+    export type CreateChatReportMutationError = ErrorType<unknown>
+    export type CreateChatReportMutationVariables = {id: number;data: BodyType<ChatReportInput>}
+
+    export const useCreateChatReport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChatReport>>, TError,CreateChatReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createChatReport>>,
+        TError,
+        CreateChatReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateChatReportMutationOptions(options));
+    }
+
+export const getListChatReportsUrl = () => {
+
+
+
+
+  return `/api/school/chats/reports`
+}
+
+export const listChatReports = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChatReport[]> => {
+
+  return customFetch<ChatReport[]>(getListChatReportsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListChatReportsQueryKey = () => {
+    return [
+    `/api/school/chats/reports`
+    ] as const;
+    }
+
+
+export const getListChatReportsQueryOptions = <TData = Awaited<ReturnType<typeof listChatReports>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listChatReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListChatReportsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listChatReports>>> = ({ signal }) => listChatReports({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listChatReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListChatReportsQueryResult = NonNullable<Awaited<ReturnType<typeof listChatReports>>>
+export type ListChatReportsQueryError = ErrorType<unknown>
+
+
+
+export function useListChatReports<TData = Awaited<ReturnType<typeof listChatReports>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listChatReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListChatReportsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReviewChatReportUrl = (id: number,) => {
+
+
+
+
+  return `/api/school/chats/reports/${id}`
+}
+
+export const reviewChatReport = async (id: number,
+    chatReportReviewInput: ChatReportReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<ChatReport> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ChatReport>(getReviewChatReportUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(chatReportReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewChatReportMutationKey = () => ['reviewChatReport'] as const;
+
+export const getReviewChatReportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewChatReport>>, TError,ReviewChatReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewChatReport>>, TError,ReviewChatReportMutationVariables, TContext> => {
+
+const mutationKey = getReviewChatReportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewChatReport>>, ReviewChatReportMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewChatReport(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewChatReportMutationResult = NonNullable<Awaited<ReturnType<typeof reviewChatReport>>>
+    export type ReviewChatReportMutationBody = BodyType<ChatReportReviewInput>
+    export type ReviewChatReportMutationError = ErrorType<unknown>
+    export type ReviewChatReportMutationVariables = {id: number;data: BodyType<ChatReportReviewInput>}
+
+    export const useReviewChatReport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewChatReport>>, TError,ReviewChatReportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewChatReport>>,
+        TError,
+        ReviewChatReportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewChatReportMutationOptions(options));
     }
 
 export const getExportSchoolReportUrl = (params: ExportSchoolReportParams,) => {

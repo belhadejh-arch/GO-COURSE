@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useNativeAuth } from '@/lib/native-auth';
 import {
-  Bell, BookOpen, CalendarDays, ClipboardList, FileBarChart, FileCheck2, GraduationCap, Languages, Layers, LayoutDashboard,
+  Bell, BookOpen, CalendarDays, ClipboardList, FileBarChart, FileCheck2, GraduationCap, Languages, Layers, LayoutDashboard, MessageCircle,
   Library, LogOut, Menu, Presentation, Receipt, Repeat, Settings, ShieldAlert, Tags, UserCheck, UserPlus, Users, UsersRound, Wallet, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -16,7 +16,7 @@ import { useAuthStatus } from '@/lib/auth-status';
 
 const base = import.meta.env.BASE_URL;
 const ICONS: Record<string, LucideIcon> = {
-  Bell, BookOpen, CalendarDays, ClipboardList, FileBarChart, FileCheck2, GraduationCap, Languages, Layers, LayoutDashboard,
+  Bell, BookOpen, CalendarDays, ClipboardList, FileBarChart, FileCheck2, GraduationCap, Languages, Layers, LayoutDashboard, MessageCircle,
   Library, Presentation, Receipt, Repeat, Settings, Tags, UserCheck, UserPlus, Users, UsersRound, Wallet,
 };
 const ROLE_LABEL: Record<Role, string> = { guest: 'زائر', admin: 'مدير', staff: 'موظف إدارة', teacher: 'أستاذ', student: 'طالب' };

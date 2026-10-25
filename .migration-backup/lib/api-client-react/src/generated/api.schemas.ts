@@ -129,6 +129,195 @@ export interface UploadResult {
   objectPath: string;
 }
 
+export type ChatParticipantRole = typeof ChatParticipantRole[keyof typeof ChatParticipantRole];
+
+
+export const ChatParticipantRole = {
+  admin: 'admin',
+  staff: 'staff',
+  teacher: 'teacher',
+  student: 'student',
+} as const;
+
+export interface ChatParticipant {
+  id: string;
+  name: string;
+  role: ChatParticipantRole;
+  /** @nullable */
+  profileId?: number | null;
+  avatarUrl: string;
+  canSend: boolean;
+}
+
+export interface ChatAttachment {
+  id: number;
+  name: string;
+  contentType: string;
+  size: number;
+  downloadUrl: string;
+}
+
+export interface ChatMessagePreview {
+  id: number;
+  senderId: string;
+  senderName: string;
+  body: string;
+  createdAt: string;
+  attachments: ChatAttachment[];
+}
+
+export type ChatConversationKind = typeof ChatConversationKind[keyof typeof ChatConversationKind];
+
+
+export const ChatConversationKind = {
+  group: 'group',
+  direct: 'direct',
+} as const;
+
+export interface ChatConversation {
+  id: number;
+  kind: ChatConversationKind;
+  title: string;
+  sectionTitle: string;
+  courseId: number;
+  /** @nullable */
+  groupId: number | null;
+  members: ChatParticipant[];
+  lastMessage: ChatMessagePreview | null;
+  unreadCount: number;
+  canSend: boolean;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  conversationId: number;
+  senderId: string;
+  senderName: string;
+  senderAvatarUrl: string;
+  body: string;
+  attachments: ChatAttachment[];
+  createdAt: string;
+}
+
+export interface ChatMessagePage {
+  messages: ChatMessage[];
+  hasMore: boolean;
+  /** @nullable */
+  nextBefore: number | null;
+}
+
+export interface ChatMessageInput {
+  /** @maxLength 4000 */
+  body?: string;
+  /** @maxItems 8 */
+  attachmentIds?: number[];
+}
+
+export interface ChatMessageSearchInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  query: string;
+}
+
+export interface ChatReadResult {
+  conversationId: number;
+  /** @nullable */
+  lastReadMessageId: number | null;
+  unreadCount: number;
+}
+
+export interface ChatUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 26214400
+     */
+  size: number;
+  contentType: string;
+}
+
+export interface ChatUpload {
+  id: number;
+  uploadURL: string;
+  expiresAt: string;
+}
+
+export type ChatReportInputReason = typeof ChatReportInputReason[keyof typeof ChatReportInputReason];
+
+
+export const ChatReportInputReason = {
+  harassment: 'harassment',
+  contact_info: 'contact_info',
+  inappropriate: 'inappropriate',
+  other: 'other',
+} as const;
+
+export interface ChatReportInput {
+  /** @nullable */
+  messageId?: number | null;
+  reason: ChatReportInputReason;
+  /** @maxLength 1000 */
+  details?: string;
+}
+
+export type ChatReportReviewInputStatus = typeof ChatReportReviewInputStatus[keyof typeof ChatReportReviewInputStatus];
+
+
+export const ChatReportReviewInputStatus = {
+  resolved: 'resolved',
+  dismissed: 'dismissed',
+} as const;
+
+export interface ChatReportReviewInput {
+  status: ChatReportReviewInputStatus;
+}
+
+export type ChatReportStatus = typeof ChatReportStatus[keyof typeof ChatReportStatus];
+
+
+export const ChatReportStatus = {
+  open: 'open',
+  resolved: 'resolved',
+  dismissed: 'dismissed',
+} as const;
+
+export interface ChatReport {
+  id: number;
+  conversationId: number;
+  /** @nullable */
+  messageId: number | null;
+  reason: string;
+  details: string;
+  status: ChatReportStatus;
+  reporterName: string;
+  messageExcerpt: string;
+  createdAt: string;
+  /** @nullable */
+  reviewedAt: string | null;
+}
+
+export interface ChatSectionResult {
+  id: string;
+  courseId: number;
+  /** @nullable */
+  groupId: number | null;
+  title: string;
+  courseTitle: string;
+}
+
+export interface ChatAdminSearch {
+  people: ChatParticipant[];
+  sections: ChatSectionResult[];
+  conversations: ChatConversation[];
+}
+
 export type LogoutSchoolAccount200 = {
   ok: boolean;
 };
@@ -140,6 +329,21 @@ export type ChangeSchoolPassword200 = {
 export type ResetSchoolPassword200 = {
   email: string;
   password: string;
+};
+
+export type ListSchoolChatsParams = {
+/**
+ * @maxLength 120
+ */
+search?: string;
+};
+
+export type SearchSchoolChatDirectoryParams = {
+/**
+ * @minLength 1
+ * @maxLength 120
+ */
+q: string;
 };
 
 export type ExportSchoolReportParams = {

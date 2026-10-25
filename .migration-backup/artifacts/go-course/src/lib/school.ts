@@ -386,6 +386,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'الرئيسية', items: [
     { href: '/dashboard', label: 'لوحة التحكم', icon: 'LayoutDashboard', roles: ALL },
     { href: '/notifications', label: 'الإشعارات', icon: 'Bell', roles: ALL },
+    { href: '/chats', label: 'المحادثات', icon: 'MessageCircle', roles: ALL },
     { href: '/profile', label: 'ملفي الشخصي', icon: 'UserCheck', roles: ['teacher','student'] },
     { href: '/library', label: 'مكتبة الأستاذ', icon: 'Library', roles: ['teacher'] },
     { href: '/curriculum-requests', label: 'طلبات المناهج', icon: 'FileCheck2', roles: ['teacher','admin'] },

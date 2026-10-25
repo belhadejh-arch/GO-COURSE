@@ -16,6 +16,7 @@ import NativeLoginPage from '@/pages/native-login';
 import ProfilePage from '@/pages/profile';
 import LibraryPage from '@/pages/library';
 import CurriculumRequestsPage from '@/pages/curriculum-requests';
+import ChatsPage from '@/pages/chats';
 import { NativeAuthProvider, useNativeAuth } from '@/lib/native-auth';
 import { SchoolRealtime } from '@/components/school-realtime';
 
@@ -60,6 +61,7 @@ function Routes() {
     <Route path="/profile">{() => shell(<ProfilePage />)}</Route>
     <Route path="/library">{() => shell(<LibraryPage />)}</Route>
     <Route path="/curriculum-requests">{() => shell(<CurriculumRequestsPage />)}</Route>
+    <Route path="/chats">{() => shell(<ChatsPage />)}</Route>
     <Route path="/sessions">{() => shell(<SessionsPage />)}</Route>
     <Route path="/notifications">{() => shell(<NotificationsPage />)}</Route>
     <Route path="/reports">{() => shell(<ReportsPage />)}</Route>

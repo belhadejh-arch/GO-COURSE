@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, schoolRecords } from "@workspace/db";
+import { chatMessages, chatReports, db, schoolRecords } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { readSession } from "../lib/native-auth";
 
@@ -8,14 +8,17 @@ const router=Router();
 // audit revision synchronizes separate Render instances and survives restarts.
 type Sink={write:(message:string)=>boolean;close:()=>void};
 const sinks=new Set<Sink>();
-let poll:ReturnType<typeof setInterval>|undefined,lastRevision=-1,busy=false;
+let poll:ReturnType<typeof setInterval>|undefined,lastRevision="",busy=false;
 async function revision() {
   if(busy)return;busy=true;
   try {
-    const [row]=await db.select({version:sql<number>`coalesce(max(${schoolRecords.id}),0)::int`}).from(schoolRecords).where(eq(schoolRecords.entity,"audit"));
-    if(row.version!==lastRevision) {
-      lastRevision=row.version;
-      for(const sink of sinks)if(!sink.write(`event: change\ndata: ${row.version}\n\n`))sink.close();
+    const [audit]=await db.select({version:sql<number>`coalesce(max(${schoolRecords.id}),0)::int`}).from(schoolRecords).where(eq(schoolRecords.entity,"audit"));
+    const [messages]=await db.select({version:sql<number>`coalesce(max(${chatMessages.id}),0)::int`}).from(chatMessages);
+    const [reports]=await db.select({version:sql<number>`coalesce(max(${chatReports.id}),0)::int`}).from(chatReports);
+    const version=`${audit.version}-${messages.version}-${reports.version}`;
+    if(version!==lastRevision) {
+      lastRevision=version;
+      for(const sink of sinks)if(!sink.write(`event: change\ndata: ${version}\n\n`))sink.close();
     }
   } catch { for(const sink of sinks)sink.close(); }
   finally {busy=false;}
@@ -36,7 +39,7 @@ router.get("/school/events",async(req,res)=>{
   },15000);
   req.on("close",()=>{
     clearInterval(heartbeat);sinks.delete(sink);
-    if(!sinks.size&&poll){clearInterval(poll);poll=undefined;lastRevision=-1;}
+     if(!sinks.size&&poll){clearInterval(poll);poll=undefined;lastRevision="";}
   });
 });
 export default router;

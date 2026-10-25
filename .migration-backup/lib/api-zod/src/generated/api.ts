@@ -255,6 +255,356 @@ export const RequestSchoolUploadResponse = zod.object({
 })
 
 
+export const listSchoolChatsQuerySearchMax = 120;
+
+
+
+export const ListSchoolChatsQueryParams = zod.object({
+  "search": zod.coerce.string().max(listSchoolChatsQuerySearchMax).optional()
+})
+
+export const ListSchoolChatsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "kind": zod.enum(['group', 'direct']),
+  "title": zod.string(),
+  "sectionTitle": zod.string(),
+  "courseId": zod.number().int(),
+  "groupId": zod.number().int().nullable(),
+  "members": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "role": zod.enum(['admin', 'staff', 'teacher', 'student']),
+  "profileId": zod.number().int().nullish(),
+  "avatarUrl": zod.string(),
+  "canSend": zod.boolean()
+})),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.number().int(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+}))
+}),zod.null()]),
+  "unreadCount": zod.number().int(),
+  "canSend": zod.boolean(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListSchoolChatsResponse = zod.array(ListSchoolChatsResponseItem)
+
+
+export const searchSchoolChatDirectoryQueryQMax = 120;
+
+
+
+export const SearchSchoolChatDirectoryQueryParams = zod.object({
+  "q": zod.coerce.string().min(1).max(searchSchoolChatDirectoryQueryQMax)
+})
+
+export const SearchSchoolChatDirectoryResponse = zod.object({
+  "people": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "role": zod.enum(['admin', 'staff', 'teacher', 'student']),
+  "profileId": zod.number().int().nullish(),
+  "avatarUrl": zod.string(),
+  "canSend": zod.boolean()
+})),
+  "sections": zod.array(zod.object({
+  "id": zod.string(),
+  "courseId": zod.number().int(),
+  "groupId": zod.number().int().nullable(),
+  "title": zod.string(),
+  "courseTitle": zod.string()
+})),
+  "conversations": zod.array(zod.object({
+  "id": zod.number().int(),
+  "kind": zod.enum(['group', 'direct']),
+  "title": zod.string(),
+  "sectionTitle": zod.string(),
+  "courseId": zod.number().int(),
+  "groupId": zod.number().int().nullable(),
+  "members": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "role": zod.enum(['admin', 'staff', 'teacher', 'student']),
+  "profileId": zod.number().int().nullish(),
+  "avatarUrl": zod.string(),
+  "canSend": zod.boolean()
+})),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.number().int(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+}))
+}),zod.null()]),
+  "unreadCount": zod.number().int(),
+  "canSend": zod.boolean(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+export const ListChatMessagesParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const ListChatMessagesResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderAvatarUrl": zod.string(),
+  "body": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+})),
+  "createdAt": zod.coerce.date()
+})),
+  "hasMore": zod.boolean(),
+  "nextBefore": zod.number().int().nullable()
+})
+
+
+export const CreateChatMessageParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const createChatMessageBodyBodyMax = 4000;
+
+export const createChatMessageBodyAttachmentIdsMax = 8;
+
+
+
+export const CreateChatMessageBody = zod.object({
+  "body": zod.string().max(createChatMessageBodyBodyMax).optional(),
+  "attachmentIds": zod.array(zod.number().int()).max(createChatMessageBodyAttachmentIdsMax).optional()
+})
+
+export const CreateChatMessageResponse = zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderAvatarUrl": zod.string(),
+  "body": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+})),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const ListOlderChatMessagesParams = zod.object({
+  "id": zod.coerce.number().int(),
+  "before": zod.coerce.number().int()
+})
+
+export const ListOlderChatMessagesResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderAvatarUrl": zod.string(),
+  "body": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+})),
+  "createdAt": zod.coerce.date()
+})),
+  "hasMore": zod.boolean(),
+  "nextBefore": zod.number().int().nullable()
+})
+
+
+export const SearchChatMessagesParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const searchChatMessagesBodyQueryMax = 120;
+
+
+
+export const SearchChatMessagesBody = zod.object({
+  "query": zod.string().min(1).max(searchChatMessagesBodyQueryMax)
+})
+
+export const SearchChatMessagesResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderAvatarUrl": zod.string(),
+  "body": zod.string(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+})),
+  "createdAt": zod.coerce.date()
+})),
+  "hasMore": zod.boolean(),
+  "nextBefore": zod.number().int().nullable()
+})
+
+
+export const MarkChatReadParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const MarkChatReadResponse = zod.object({
+  "conversationId": zod.number().int(),
+  "lastReadMessageId": zod.number().int().nullable(),
+  "unreadCount": zod.number().int()
+})
+
+
+export const CreateChatUploadParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const createChatUploadBodyNameMax = 180;
+
+export const createChatUploadBodySizeMax = 26214400;
+
+
+
+export const CreateChatUploadBody = zod.object({
+  "name": zod.string().min(1).max(createChatUploadBodyNameMax),
+  "size": zod.number().int().min(1).max(createChatUploadBodySizeMax),
+  "contentType": zod.string()
+})
+
+export const CreateChatUploadResponse = zod.object({
+  "id": zod.number().int(),
+  "uploadURL": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+export const CompleteChatUploadParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const CompleteChatUploadResponse = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "downloadUrl": zod.string()
+})
+
+
+export const DownloadChatAttachmentParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DownloadChatAttachmentResponse = zod.unknown()
+
+
+export const GetChatParticipantAvatarParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetChatParticipantAvatarResponse = zod.unknown()
+
+
+export const CreateChatReportParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const createChatReportBodyDetailsMax = 1000;
+
+
+
+export const CreateChatReportBody = zod.object({
+  "messageId": zod.number().int().nullish(),
+  "reason": zod.enum(['harassment', 'contact_info', 'inappropriate', 'other']),
+  "details": zod.string().max(createChatReportBodyDetailsMax).optional()
+})
+
+export const CreateChatReportResponse = zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "messageId": zod.number().int().nullable(),
+  "reason": zod.string(),
+  "details": zod.string(),
+  "status": zod.enum(['open', 'resolved', 'dismissed']),
+  "reporterName": zod.string(),
+  "messageExcerpt": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+
+
+export const ListChatReportsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "messageId": zod.number().int().nullable(),
+  "reason": zod.string(),
+  "details": zod.string(),
+  "status": zod.enum(['open', 'resolved', 'dismissed']),
+  "reporterName": zod.string(),
+  "messageExcerpt": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+export const ListChatReportsResponse = zod.array(ListChatReportsResponseItem)
+
+
+export const ReviewChatReportParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const ReviewChatReportBody = zod.object({
+  "status": zod.enum(['resolved', 'dismissed'])
+})
+
+export const ReviewChatReportResponse = zod.object({
+  "id": zod.number().int(),
+  "conversationId": zod.number().int(),
+  "messageId": zod.number().int().nullable(),
+  "reason": zod.string(),
+  "details": zod.string(),
+  "status": zod.enum(['open', 'resolved', 'dismissed']),
+  "reporterName": zod.string(),
+  "messageExcerpt": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+
+
 export const ExportSchoolReportQueryParams = zod.object({
   "entity": zod.coerce.string(),
   "search": zod.coerce.string().optional(),

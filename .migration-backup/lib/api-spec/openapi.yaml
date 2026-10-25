@@ -197,6 +197,191 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/UploadResult" }
+  /school/chats:
+    get:
+      operationId: listSchoolChats
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 120 } }
+      responses:
+        "200":
+          description: Conversations visible to the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ChatConversation" }
+  /school/chats/admin/search:
+    get:
+      operationId: searchSchoolChatDirectory
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 120 } }
+      responses:
+        "200":
+          description: Administrator-only people, sections, and conversations search
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatAdminSearch" }
+  /school/chats/{id}/messages:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: listChatMessages
+      responses:
+        "200":
+          description: Chronological page of immutable messages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatMessagePage" }
+    post:
+      operationId: createChatMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatMessageInput" }
+      responses:
+        "201":
+          description: Immutable message created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatMessage" }
+  /school/chats/{id}/messages/before/{before}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+      - { name: before, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: listOlderChatMessages
+      responses:
+        "200":
+          description: Older chronological page of immutable messages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatMessagePage" }
+  /school/chats/{id}/messages/search:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: searchChatMessages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatMessageSearchInput" }
+      responses:
+        "200":
+          description: Messages matching a participant-visible text search
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatMessagePage" }
+  /school/chats/{id}/read:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: markChatRead
+      responses:
+        "200":
+          description: Conversation marked read through the latest visible message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatReadResult" }
+  /school/chats/{id}/uploads:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: createChatUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatUploadInput" }
+      responses:
+        "201":
+          description: Single-use private upload reservation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatUpload" }
+  /school/chats/uploads/{id}/complete:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: completeChatUpload
+      responses:
+        "200":
+          description: Uploaded file verified and ready to attach
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatAttachment" }
+  /school/chats/attachments/{id}/file:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      operationId: downloadChatAttachment
+      responses:
+        "200":
+          description: Protected inline attachment stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "206":
+          description: Protected attachment byte range
+  /school/chats/participants/{userId}/avatar:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getChatParticipantAvatar
+      responses:
+        "200":
+          description: Protected avatar for a participant who shares a conversation
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+  /school/chats/{id}/reports:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    post:
+      operationId: createChatReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatReportInput" }
+      responses:
+        "201":
+          description: Report submitted for administrator review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatReport" }
+  /school/chats/reports:
+    get:
+      operationId: listChatReports
+      responses:
+        "200":
+          description: Administrator-only chat reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ChatReport" }
+  /school/chats/reports/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    patch:
+      operationId: reviewChatReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatReportReviewInput" }
+      responses:
+        "200":
+          description: Report reviewed; message content is unchanged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatReport" }
   /school/reports/export:
     get:
       operationId: exportSchoolReport
@@ -346,3 +531,159 @@ components:
       properties:
         uploadURL: { type: string }
         objectPath: { type: string }
+    ChatParticipant:
+      type: object
+      required: [id, name, role, avatarUrl, canSend]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [admin, staff, teacher, student] }
+        profileId: { type: ["integer", "null"] }
+        avatarUrl: { type: string }
+        canSend: { type: boolean }
+    ChatAttachment:
+      type: object
+      required: [id, name, contentType, size, downloadUrl]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        contentType: { type: string }
+        size: { type: integer }
+        downloadUrl: { type: string }
+    ChatMessagePreview:
+      type: object
+      required: [id, senderId, senderName, body, createdAt, attachments]
+      properties:
+        id: { type: integer }
+        senderId: { type: string }
+        senderName: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        attachments:
+          type: array
+          items: { $ref: "#/components/schemas/ChatAttachment" }
+    ChatConversation:
+      type: object
+      required: [id, kind, title, sectionTitle, courseId, groupId, members, lastMessage, unreadCount, canSend, updatedAt]
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [group, direct] }
+        title: { type: string }
+        sectionTitle: { type: string }
+        courseId: { type: integer }
+        groupId: { type: ["integer", "null"] }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/ChatParticipant" }
+        lastMessage:
+          anyOf:
+            - { $ref: "#/components/schemas/ChatMessagePreview" }
+            - { type: "null" }
+        unreadCount: { type: integer }
+        canSend: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+    ChatMessage:
+      type: object
+      required: [id, conversationId, senderId, senderName, senderAvatarUrl, body, attachments, createdAt]
+      properties:
+        id: { type: integer }
+        conversationId: { type: integer }
+        senderId: { type: string }
+        senderName: { type: string }
+        senderAvatarUrl: { type: string }
+        body: { type: string }
+        attachments:
+          type: array
+          items: { $ref: "#/components/schemas/ChatAttachment" }
+        createdAt: { type: string, format: date-time }
+    ChatMessagePage:
+      type: object
+      required: [messages, hasMore, nextBefore]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/ChatMessage" }
+        hasMore: { type: boolean }
+        nextBefore: { type: ["integer", "null"] }
+    ChatMessageInput:
+      type: object
+      properties:
+        body: { type: string, maxLength: 4000 }
+        attachmentIds:
+          type: array
+          maxItems: 8
+          items: { type: integer }
+    ChatMessageSearchInput:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, minLength: 1, maxLength: 120 }
+    ChatReadResult:
+      type: object
+      required: [conversationId, lastReadMessageId, unreadCount]
+      properties:
+        conversationId: { type: integer }
+        lastReadMessageId: { type: ["integer", "null"] }
+        unreadCount: { type: integer }
+    ChatUploadInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 180 }
+        size: { type: integer, minimum: 1, maximum: 26214400 }
+        contentType: { type: string }
+    ChatUpload:
+      type: object
+      required: [id, uploadURL, expiresAt]
+      properties:
+        id: { type: integer }
+        uploadURL: { type: string }
+        expiresAt: { type: string, format: date-time }
+    ChatReportInput:
+      type: object
+      required: [reason]
+      properties:
+        messageId: { type: ["integer", "null"] }
+        reason: { type: string, enum: [harassment, contact_info, inappropriate, other] }
+        details: { type: string, maxLength: 1000 }
+    ChatReportReviewInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [resolved, dismissed] }
+    ChatReport:
+      type: object
+      required: [id, conversationId, messageId, reason, details, status, reporterName, messageExcerpt, createdAt, reviewedAt]
+      properties:
+        id: { type: integer }
+        conversationId: { type: integer }
+        messageId: { type: ["integer", "null"] }
+        reason: { type: string }
+        details: { type: string }
+        status: { type: string, enum: [open, resolved, dismissed] }
+        reporterName: { type: string }
+        messageExcerpt: { type: string }
+        createdAt: { type: string, format: date-time }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+    ChatAdminSearch:
+      type: object
+      required: [people, sections, conversations]
+      properties:
+        people:
+          type: array
+          items: { $ref: "#/components/schemas/ChatParticipant" }
+        sections:
+          type: array
+          items: { $ref: "#/components/schemas/ChatSectionResult" }
+        conversations:
+          type: array
+          items: { $ref: "#/components/schemas/ChatConversation" }
+    ChatSectionResult:
+      type: object
+      required: [id, courseId, groupId, title, courseTitle]
+      properties:
+        id: { type: string }
+        courseId: { type: integer }
+        groupId: { type: ["integer", "null"] }
+        title: { type: string }
+        courseTitle: { type: string }
