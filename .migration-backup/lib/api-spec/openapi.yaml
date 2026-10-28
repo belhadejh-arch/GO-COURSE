@@ -199,6 +199,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RegistrationQuote" }
+  /registration/receipt-uploads:
+    post:
+      operationId: createRegistrationReceiptUpload
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationReceiptUploadInput" }
+      responses:
+        "200":
+          description: Short-lived signed upload URL for a private payment receipt
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationReceiptUpload" }
   /registration/requests:
     post:
       operationId: createRegistrationRequest
@@ -748,6 +763,7 @@ components:
       required: [idempotencyKey, fullName, phone, email, country, languageId, courseType, paymentMethod]
       properties:
         idempotencyKey: { type: string, minLength: 36, maxLength: 36 }
+        receiptUploadToken: { type: string, format: uuid }
         fullName: { type: string, minLength: 2, maxLength: 160 }
         phone: { type: string, minLength: 7, maxLength: 32 }
         email: { type: string, format: email, maxLength: 254 }
@@ -768,18 +784,46 @@ components:
         schedulePreferences: { type: string, maxLength: 500 }
         paymentMethod: { type: string, enum: [ccp, baridi_mob, edahabia_cib, international_manual, other] }
         paymentMethodOther: { type: string, maxLength: 120 }
+    RegistrationReceiptUploadInput:
+      type: object
+      required: [uploadToken, name, contentType, size]
+      properties:
+        uploadToken: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 160 }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp, application/pdf] }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+    RegistrationReceiptUpload:
+      type: object
+      required: [uploadURL, alreadyUploaded, alreadyAttached]
+      properties:
+        uploadURL:
+          anyOf:
+            - { type: string, format: uri }
+            - { type: "null" }
+        alreadyUploaded: { type: boolean }
+        alreadyAttached: { type: boolean }
+    RegistrationPaymentReceipt:
+      type: object
+      required: [id, objectPath, name, contentType, size, createdAt]
+      properties:
+        id: { type: integer }
+        objectPath: { type: string }
+        name: { type: string }
+        contentType: { type: string }
+        size: { type: integer }
+        createdAt: { type: string, format: date-time }
     RegistrationReceipt:
       type: object
       required: [requestNo, status, paymentStatus, quote, createdAt]
       properties:
         requestNo: { type: string }
         status: { type: string, enum: [pending_review, accepted, rejected, needs_info] }
-        paymentStatus: { type: string, enum: [awaiting_verification, verified, rejected] }
+        paymentStatus: { type: string, enum: [awaiting_payment, awaiting_verification, verified, rejected] }
         quote: { $ref: "#/components/schemas/RegistrationQuote" }
         createdAt: { type: string, format: date-time }
     RegistrationAdminRequest:
       type: object
-      required: [id, requestNo, fullName, phone, email, country, languageId, languageTitle, courseType, paymentMethod, paymentStatus, status, quote, createdAt, updatedAt]
+      required: [id, requestNo, fullName, phone, email, country, languageId, languageTitle, courseType, paymentMethod, paymentStatus, status, quote, paymentReceipt, createdAt, updatedAt]
       properties:
         id: { type: integer }
         requestNo: { type: string }
@@ -844,7 +888,11 @@ components:
           anyOf:
             - { type: string }
             - { type: "null" }
-        paymentStatus: { type: string, enum: [awaiting_verification, verified, rejected] }
+        paymentStatus: { type: string, enum: [awaiting_payment, awaiting_verification, verified, rejected] }
+        paymentReceipt:
+          anyOf:
+            - { $ref: "#/components/schemas/RegistrationPaymentReceipt" }
+            - { type: "null" }
         status: { type: string, enum: [pending_review, accepted, rejected, needs_info] }
         quote: { $ref: "#/components/schemas/RegistrationQuote" }
         adminNote: { type: string }
@@ -862,7 +910,7 @@ components:
       type: object
       properties:
         status: { type: string, enum: [pending_review, accepted, rejected, needs_info] }
-        paymentStatus: { type: string, enum: [awaiting_verification, verified, rejected] }
+        paymentStatus: { type: string, enum: [awaiting_payment, awaiting_verification, verified, rejected] }
         finalAmount:
           anyOf:
             - { type: number, minimum: 0 }

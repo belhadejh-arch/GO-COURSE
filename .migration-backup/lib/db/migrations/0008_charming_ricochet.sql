@@ -1,0 +1,3 @@
+ALTER TABLE "registration_requests" DROP CONSTRAINT "registration_request_payment_status";--> statement-breakpoint
+ALTER TABLE "registration_requests" ALTER COLUMN "payment_status" SET DEFAULT 'awaiting_payment';--> statement-breakpoint
+ALTER TABLE "registration_requests" ADD CONSTRAINT "registration_request_payment_status" CHECK ("registration_requests"."payment_status" in ('awaiting_payment','awaiting_verification','verified','rejected'));

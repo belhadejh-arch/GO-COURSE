@@ -13,6 +13,7 @@ import type { RegistrationAdminRequestPaymentStatus } from './registrationAdminR
 import type { RegistrationAdminRequestStatus } from './registrationAdminRequestStatus';
 import type { RegistrationAdminRequestStudyMode } from './registrationAdminRequestStudyMode';
 import type { RegistrationAdminRequestStudySystem } from './registrationAdminRequestStudySystem';
+import type { RegistrationPaymentReceipt } from './registrationPaymentReceipt';
 import type { RegistrationQuote } from './registrationQuote';
 
 export interface RegistrationAdminRequest {
@@ -41,6 +42,7 @@ export interface RegistrationAdminRequest {
   paymentMethod: RegistrationAdminRequestPaymentMethod;
   paymentMethodOther?: string | null;
   paymentStatus: RegistrationAdminRequestPaymentStatus;
+  paymentReceipt: RegistrationPaymentReceipt | null;
   status: RegistrationAdminRequestStatus;
   quote: RegistrationQuote;
   adminNote?: string;

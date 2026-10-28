@@ -296,6 +296,26 @@ export const CalculateRegistrationQuoteResponse = zod.object({
 })
 
 
+export const createRegistrationReceiptUploadBodyNameMax = 160;
+
+export const createRegistrationReceiptUploadBodySizeMax = 10485760;
+
+
+
+export const CreateRegistrationReceiptUploadBody = zod.object({
+  "uploadToken": zod.string().uuid(),
+  "name": zod.string().min(1).max(createRegistrationReceiptUploadBodyNameMax),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+  "size": zod.number().int().min(1).max(createRegistrationReceiptUploadBodySizeMax)
+})
+
+export const CreateRegistrationReceiptUploadResponse = zod.object({
+  "uploadURL": zod.union([zod.string().url(),zod.null()]),
+  "alreadyUploaded": zod.boolean(),
+  "alreadyAttached": zod.boolean()
+})
+
+
 export const createRegistrationRequestBodyIdempotencyKeyMin = 36;
 export const createRegistrationRequestBodyIdempotencyKeyMax = 36;
 
@@ -326,6 +346,7 @@ export const createRegistrationRequestBodyPaymentMethodOtherMax = 120;
 
 export const CreateRegistrationRequestBody = zod.object({
   "idempotencyKey": zod.string().min(createRegistrationRequestBodyIdempotencyKeyMin).max(createRegistrationRequestBodyIdempotencyKeyMax),
+  "receiptUploadToken": zod.string().uuid().optional(),
   "fullName": zod.string().min(createRegistrationRequestBodyFullNameMin).max(createRegistrationRequestBodyFullNameMax),
   "phone": zod.string().min(createRegistrationRequestBodyPhoneMin).max(createRegistrationRequestBodyPhoneMax),
   "email": zod.string().email().max(createRegistrationRequestBodyEmailMax),
@@ -351,7 +372,7 @@ export const CreateRegistrationRequestBody = zod.object({
 export const CreateRegistrationRequestResponse = zod.object({
   "requestNo": zod.string(),
   "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']),
-  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']),
+  "paymentStatus": zod.enum(['awaiting_payment', 'awaiting_verification', 'verified', 'rejected']),
   "quote": zod.object({
   "languageId": zod.number().int(),
   "languageTitle": zod.string(),
@@ -398,7 +419,15 @@ export const ListRegistrationRequestsResponseItem = zod.object({
   "schedulePreferences": zod.union([zod.string(),zod.null()]).optional(),
   "paymentMethod": zod.enum(['ccp', 'baridi_mob', 'edahabia_cib', 'international_manual', 'other']),
   "paymentMethodOther": zod.union([zod.string(),zod.null()]).optional(),
-  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']),
+  "paymentStatus": zod.enum(['awaiting_payment', 'awaiting_verification', 'verified', 'rejected']),
+  "paymentReceipt": zod.union([zod.object({
+  "id": zod.number().int(),
+  "objectPath": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]),
   "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']),
   "quote": zod.object({
   "languageId": zod.number().int(),
@@ -447,7 +476,7 @@ export const updateRegistrationRequestBodyReasonMax = 1000;
 
 export const UpdateRegistrationRequestBody = zod.object({
   "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']).optional(),
-  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']).optional(),
+  "paymentStatus": zod.enum(['awaiting_payment', 'awaiting_verification', 'verified', 'rejected']).optional(),
   "finalAmount": zod.union([zod.number().min(updateRegistrationRequestBodyFinalAmountOneMin),zod.null()]).optional(),
   "finalCurrency": zod.string().min(updateRegistrationRequestBodyFinalCurrencyMin).max(updateRegistrationRequestBodyFinalCurrencyMax).optional(),
   "finalUnit": zod.enum(['monthly', 'level', 'package']).optional(),
@@ -480,7 +509,15 @@ export const UpdateRegistrationRequestResponse = zod.object({
   "schedulePreferences": zod.union([zod.string(),zod.null()]).optional(),
   "paymentMethod": zod.enum(['ccp', 'baridi_mob', 'edahabia_cib', 'international_manual', 'other']),
   "paymentMethodOther": zod.union([zod.string(),zod.null()]).optional(),
-  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']),
+  "paymentStatus": zod.enum(['awaiting_payment', 'awaiting_verification', 'verified', 'rejected']),
+  "paymentReceipt": zod.union([zod.object({
+  "id": zod.number().int(),
+  "objectPath": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]),
   "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']),
   "quote": zod.object({
   "languageId": zod.number().int(),

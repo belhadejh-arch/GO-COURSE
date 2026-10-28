@@ -2,11 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   registrationQuoteInputSchema,
+  registrationReceiptUploadInputSchema,
   registrationRequestInputSchema,
 } from "../src/lib/registration-validation";
 
 const validLevelRequest = {
   idempotencyKey: "a062cc76-fb8a-4c3d-bdb0-e73682909931",
+  receiptUploadToken: "c3f4175c-73a6-488d-aa92-e6769f236118",
   fullName: "سارة بن عيسى",
   phone: "+213555123456",
   email: "sara@example.com",
@@ -23,6 +25,23 @@ const validLevelRequest = {
 
 test("registration requests accept a valid regular group course", () => {
   assert.equal(registrationRequestInputSchema.safeParse(validLevelRequest).success, true);
+});
+
+test("registration requests can be submitted before an administrator confirms an unlisted price", () => {
+  const { receiptUploadToken: _receiptUploadToken, ...withoutReceipt } = validLevelRequest;
+  assert.equal(registrationRequestInputSchema.safeParse(withoutReceipt).success, true);
+});
+
+test("payment receipt uploads allow only small supported image or PDF files", () => {
+  const validUpload = {
+    uploadToken: "c3f4175c-73a6-488d-aa92-e6769f236118",
+    name: "receipt.pdf",
+    contentType: "application/pdf",
+    size: 1024,
+  };
+  assert.equal(registrationReceiptUploadInputSchema.safeParse(validUpload).success, true);
+  assert.equal(registrationReceiptUploadInputSchema.safeParse({ ...validUpload, contentType: "text/html" }).success, false);
+  assert.equal(registrationReceiptUploadInputSchema.safeParse({ ...validUpload, size: 11 * 1024 * 1024 }).success, false);
 });
 
 test("clients cannot submit a price or currency", () => {

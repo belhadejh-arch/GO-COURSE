@@ -1,13 +1,16 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Router, type Request } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   db,
+  registrationReceiptUploads,
   registrationPricingAudit,
   registrationPricingRules,
   registrationRequestAudit,
   registrationRequests,
   schoolLoginLimits,
+  schoolFileContents,
+  schoolFiles,
   schoolRecords,
   schoolUsers,
   type SchoolRow,
@@ -16,6 +19,8 @@ import { access, fail, idList, numberId } from "../lib/school-access";
 import { NativeRequest } from "../lib/native-auth";
 import { dedupeKey, saveLinks } from "../lib/school-service";
 import { validateData } from "../lib/school-validation";
+import { validFilePrefix } from "../lib/database-files";
+import { fileTransferUrl } from "../lib/file-tokens";
 import {
   calculateRegistrationQuote,
   getRegistrationOptions,
@@ -26,13 +31,13 @@ import {
   registrationConversionSchema,
   registrationPricingRuleUpdateSchema,
   registrationQuoteInputSchema,
+  registrationReceiptUploadInputSchema,
   registrationRequestInputSchema,
   registrationRequestUpdateSchema,
 } from "../lib/registration-validation";
 
 const router = Router();
 const publicReceiptStatus = "pending_review";
-const publicPaymentStatus = "awaiting_verification";
 
 function validationError(issues: { path: PropertyKey[]; message: string }[]) {
   return issues.map(issue => `${issue.path.join(".") || "البيانات"}: ${issue.message}`).join("، ");
@@ -100,7 +105,10 @@ function serializeRule(rule: typeof registrationPricingRules.$inferSelect) {
   };
 }
 
-function serializeRequest(row: typeof registrationRequests.$inferSelect) {
+function serializeRequest(
+  row: typeof registrationRequests.$inferSelect,
+  paymentReceipt: { id: number; objectPath: string; name: string; contentType: string; size: number; createdAt: Date } | null = null,
+) {
   const details = row.details || {};
   const quote = quoteFromSnapshot(row.quoteSnapshot);
   return {
@@ -128,7 +136,8 @@ function serializeRequest(row: typeof registrationRequests.$inferSelect) {
     schedulePreferences: (details.schedulePreferences || null) as string | null,
     paymentMethod: row.paymentMethod as "ccp" | "baridi_mob" | "edahabia_cib" | "international_manual" | "other",
     paymentMethodOther: row.paymentMethodOther,
-    paymentStatus: row.paymentStatus as "awaiting_verification" | "verified" | "rejected",
+    paymentStatus: row.paymentStatus as "awaiting_payment" | "awaiting_verification" | "verified" | "rejected",
+    paymentReceipt: paymentReceipt ? { ...paymentReceipt, createdAt: paymentReceipt.createdAt.toISOString() } : null,
     status: row.status as "pending_review" | "accepted" | "rejected" | "needs_info",
     quote,
     adminNote: row.adminNote,
@@ -164,6 +173,59 @@ router.post("/registration/quote", async (req, res) => {
   res.json(quoteFromSnapshot(quote));
 });
 
+router.post("/registration/receipt-uploads", async (req, res) => {
+  await rateLimit(req, "registration-receipt-upload", 12, 60 * 60 * 1000);
+  const parsed = registrationReceiptUploadInputSchema.safeParse(req.body);
+  if (!parsed.success) fail(400, validationError(parsed.error.issues));
+  const input = parsed.data;
+  const name = input.name.replace(/[\/\\\u0000-\u001f]/g, "_").slice(0, 160);
+  const tokenHash = createHash("sha256").update(input.uploadToken).digest("hex");
+  const [existing] = await db.select().from(registrationReceiptUploads)
+    .where(eq(registrationReceiptUploads.uploadTokenHash, tokenHash)).limit(1);
+
+  if (existing) {
+    const [file] = await db.select().from(schoolFiles).where(eq(schoolFiles.objectPath, existing.objectPath)).limit(1);
+    if (!file || file.name !== name || file.contentType !== input.contentType || file.size !== input.size) {
+      fail(409, "بيانات الوصل لا تطابق الحجز السابق. اختر الملف نفسه أو ابدأ رفعًا جديدًا.");
+    }
+    if (!existing.requestId && existing.expiresAt.getTime() <= Date.now()) {
+      fail(410, "انتهت صلاحية رفع الوصل. اختر الملف مرة أخرى.");
+    }
+    const [content] = await db.select({ bytes: schoolFileContents.bytes }).from(schoolFileContents)
+      .where(eq(schoolFileContents.objectPath, existing.objectPath)).limit(1);
+    const uploaded = !!content;
+    if (content && (content.bytes.length !== input.size || !validFilePrefix(input.contentType, content.bytes.subarray(0, 16)))) {
+      fail(400, "محتوى الملف لا يطابق نوع وصل الدفع المعلن.");
+    }
+    res.json({
+      uploadURL: uploaded || existing.requestId ? null : fileTransferUrl(existing.objectPath, "upload"),
+      alreadyUploaded: uploaded,
+      alreadyAttached: !!existing.requestId,
+    });
+    return;
+  }
+
+  const objectPath = `/objects/database/${randomUUID()}`;
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await db.transaction(async tx => {
+    await tx.insert(schoolFiles).values({
+      objectPath,
+      ownerId: null,
+      name,
+      contentType: input.contentType,
+      size: input.size,
+      storageProvider: "database",
+    });
+    await tx.insert(registrationReceiptUploads).values({
+      objectPath,
+      uploadTokenHash: tokenHash,
+      status: "pending",
+      expiresAt,
+    });
+  });
+  res.json({ uploadURL: fileTransferUrl(objectPath, "upload"), alreadyUploaded: false, alreadyAttached: false });
+});
+
 router.post("/registration/requests", async (req, res) => {
   await rateLimit(req, "registration-submit", 8, 60 * 60 * 1000);
   const parsed = registrationRequestInputSchema.safeParse(req.body);
@@ -195,6 +257,33 @@ router.post("/registration/requests", async (req, res) => {
     }
     const quoteResult = await calculateRegistrationQuote(tx, quoteInput);
     const { ruleId, publicQuote } = quoteWithInternalValues(quoteResult);
+    const receiptRequired = publicQuote.amount != null && ["approved", "admin_approved"].includes(publicQuote.status);
+    if (!receiptRequired && input.receiptUploadToken) {
+      fail(400, "السعر قيد تأكيد الإدارة. انتظر اعتماد المبلغ قبل دفع الرسوم أو رفع الوصل.");
+    }
+    if (receiptRequired && !input.receiptUploadToken) {
+      fail(400, "أرفق وصل الدفع بعد دفع المبلغ المعتمد.");
+    }
+    let receiptUpload: typeof registrationReceiptUploads.$inferSelect | null = null;
+    if (input.receiptUploadToken) {
+      const tokenHash = createHash("sha256").update(input.receiptUploadToken).digest("hex");
+      const [foundUpload] = await tx.select().from(registrationReceiptUploads)
+        .where(eq(registrationReceiptUploads.uploadTokenHash, tokenHash)).limit(1);
+      if (!foundUpload || foundUpload.status !== "pending" || foundUpload.requestId ||
+        foundUpload.expiresAt.getTime() <= Date.now()) {
+        fail(400, "ارفع وصل الدفع أولًا، ثم أعد إرسال طلب التسجيل.");
+      }
+      const [receiptFile] = await tx.select().from(schoolFiles)
+        .where(eq(schoolFiles.objectPath, foundUpload.objectPath)).limit(1);
+      const [receiptContent] = await tx.select({ bytes: schoolFileContents.bytes }).from(schoolFileContents)
+        .where(eq(schoolFileContents.objectPath, foundUpload.objectPath)).limit(1);
+      if (!receiptFile || receiptFile.storageProvider !== "database" || !receiptContent ||
+        receiptContent.bytes.length !== receiptFile.size ||
+        !validFilePrefix(receiptFile.contentType, receiptContent.bytes.subarray(0, 16))) {
+        fail(400, "لم يكتمل رفع وصل الدفع أو أن الملف غير صالح.");
+      }
+      receiptUpload = foundUpload;
+    }
     const sessionUser = (req as NativeRequest).schoolUser;
     const linkedUserId = sessionUser?.role === "student" &&
       sessionUser.email.trim().toLowerCase() === input.email
@@ -203,6 +292,7 @@ router.post("/registration/requests", async (req, res) => {
     const requestNo = `GC-${new Date().getFullYear()}-${randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase()}`;
     const {
       idempotencyKey: _idempotencyKey,
+      receiptUploadToken: _receiptUploadToken,
       fullName: _fullName,
       phone: _phone,
       email: _email,
@@ -232,7 +322,7 @@ router.post("/registration/requests", async (req, res) => {
       courseType: input.courseType,
       paymentMethod: input.paymentMethod,
       paymentMethodOther: input.paymentMethod === "other" ? input.paymentMethodOther : null,
-      paymentStatus: publicPaymentStatus,
+      paymentStatus: receiptUpload ? "awaiting_verification" : "awaiting_payment",
       status: publicReceiptStatus,
       priceRuleId: ruleId,
       priceStatus: publicQuote.status,
@@ -242,6 +332,17 @@ router.post("/registration/requests", async (req, res) => {
     const request = created ?? (await tx.select().from(registrationRequests).where(eq(registrationRequests.idempotencyKey, input.idempotencyKey)))[0];
     if (!request) fail(409, "تعذّر حفظ الطلب المكرر؛ أعد المحاولة.");
     if (created) {
+      if (receiptUpload) {
+        const [attachedReceipt] = await tx.update(registrationReceiptUploads).set({
+          requestId: created.id,
+          status: "attached",
+          attachedAt: new Date(),
+        }).where(and(
+          eq(registrationReceiptUploads.id, receiptUpload.id),
+          eq(registrationReceiptUploads.status, "pending"),
+        )).returning({ id: registrationReceiptUploads.id });
+        if (!attachedReceipt) fail(409, "تم ربط وصل الدفع بطلب آخر. أعد رفع الوصل ثم حاول مجددًا.");
+      }
       await tx.insert(registrationRequestAudit).values({
         requestId: created.id,
         action: "created",
@@ -249,7 +350,7 @@ router.post("/registration/requests", async (req, res) => {
         nextStatus: created.status,
         previousQuote: null,
         nextQuote: publicQuote,
-        reason: "",
+        reason: receiptUpload ? "أرفق الطالب وصل الدفع عند تقديم الطلب." : "تم تقديم الطلب قبل اعتماد السعر، دون دفع.",
       });
     }
     return {
@@ -266,7 +367,26 @@ router.post("/registration/requests", async (req, res) => {
 router.get("/admin/registration-requests", async (req, res) => {
   requireAdmin(req);
   const rows = await db.select().from(registrationRequests).orderBy(desc(registrationRequests.createdAt));
-  res.json(rows.map(serializeRequest));
+  const receiptRows = rows.length ? await db.select({
+    requestId: registrationReceiptUploads.requestId,
+    id: registrationReceiptUploads.id,
+    objectPath: registrationReceiptUploads.objectPath,
+    name: schoolFiles.name,
+    contentType: schoolFiles.contentType,
+    size: schoolFiles.size,
+    createdAt: registrationReceiptUploads.attachedAt,
+  }).from(registrationReceiptUploads)
+    .innerJoin(schoolFiles, eq(schoolFiles.objectPath, registrationReceiptUploads.objectPath))
+    .where(inArray(registrationReceiptUploads.requestId, rows.map(row => row.id))) : [];
+  const receiptsByRequest = new Map(receiptRows.filter(row => row.requestId != null).map(row => [row.requestId!, {
+    id: row.id,
+    objectPath: row.objectPath,
+    name: row.name,
+    contentType: row.contentType,
+    size: row.size,
+    createdAt: row.createdAt ?? new Date(),
+  }]));
+  res.json(rows.map(row => serializeRequest(row, receiptsByRequest.get(row.id) ?? null)));
 });
 
 router.patch("/admin/registration-requests/:id", async (req, res) => {

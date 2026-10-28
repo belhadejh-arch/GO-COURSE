@@ -8,10 +8,10 @@ import {
 import type { RegistrationAdminRequest, RegistrationPricingRule } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMe } from '@/hooks/use-school';
-import { errMsg } from '@/lib/school';
+import { errMsg, fileUrl } from '@/lib/school';
 
 const stateLabels: Record<string, string> = { pending_review: 'قيد المراجعة', accepted: 'مقبول', rejected: 'مرفوض', needs_info: 'بحاجة إلى معلومات' };
-const paymentLabels: Record<string, string> = { awaiting_verification: 'بانتظار التحقق', verified: 'تم التحقق', rejected: 'مرفوض' };
+const paymentLabels: Record<string, string> = { awaiting_payment: 'بانتظار اعتماد السعر/الدفع', awaiting_verification: 'بانتظار التحقق من الوصل', verified: 'تم التحقق', rejected: 'مرفوض' };
 const paymentMethodLabels: Record<string, string> = { ccp: 'CCP', baridi_mob: 'بريدي موب', edahabia_cib: 'الذهبية / CIB', international_manual: 'دفع دولي يدوي', other: 'وسيلة أخرى' };
 const typeLabels: Record<string, string> = { level: 'تحسين مستوى', conversation: 'محادثة', exam: 'تحضير اختبار' };
 const modeLabels: Record<string, string> = { group: 'جماعي', individual: 'فردي' };
@@ -48,12 +48,13 @@ function RowDetail({ request }: { request: RegistrationAdminRequest }) {
     ['إجمالي الحصص', request.totalSessions?.toLocaleString('ar') ?? '—'], ['المدة', request.duration ?? '—'],
     ['الاختبار', request.examName ?? '—'], ['الدرجة المستهدفة', request.targetScore ?? '—'],
     ['تاريخ الاختبار', request.examDate ?? '—'], ['الأوقات المفضلة', request.schedulePreferences ?? '—'],
-    ['طريقة الدفع المفضلة', request.paymentMethodOther ? `${paymentMethodLabels[request.paymentMethod] ?? request.paymentMethod} · ${request.paymentMethodOther}` : paymentMethodLabels[request.paymentMethod] ?? request.paymentMethod],
+    ['طريقة الدفع', request.paymentMethodOther ? `${paymentMethodLabels[request.paymentMethod] ?? request.paymentMethod} · ${request.paymentMethodOther}` : paymentMethodLabels[request.paymentMethod] ?? request.paymentMethod],
     ['رقم الملف الطلابي', request.studentProfileId?.toLocaleString('ar') ?? 'لم يُنشأ'], ['رقم التسجيل', request.enrollmentId?.toLocaleString('ar') ?? 'لم يُنشأ'],
     ['تاريخ الطلب', new Date(request.createdAt).toLocaleString('ar')],
   ];
   return <div className="mt-5 grid gap-x-5 gap-y-4 border-t border-border pt-5 sm:grid-cols-2 lg:grid-cols-3">
     {details.map(([label, value]) => <div key={label} className="min-w-0"><p className="text-[11px] font-bold text-muted-foreground">{label}</p><p className="mt-1 break-words text-sm font-semibold" dir={label === 'البريد' || label === 'الهاتف' ? 'ltr' : undefined}>{value}</p></div>)}
+    <div className="sm:col-span-2 lg:col-span-3"><p className="text-[11px] font-bold text-muted-foreground">وصل الدفع</p>{request.paymentReceipt ? <a href={fileUrl(request.paymentReceipt.objectPath)} target="_blank" rel="noreferrer" className="mt-1 inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary/10 px-3 text-sm font-bold text-primary hover:bg-primary/15" data-testid={`link-payment-receipt-${request.id}`}><FileCheck2 className="h-4 w-4" />عرض الوصل · {(request.paymentReceipt.size / (1024 * 1024)).toFixed(2)} MB</a> : <p className="mt-1 text-sm font-semibold text-muted-foreground">لا يوجد وصل مرفق</p>}</div>
     {request.goals && <div className="sm:col-span-2 lg:col-span-3"><p className="text-[11px] font-bold text-muted-foreground">أهداف الطالب</p><p className="mt-1 text-sm leading-7">{request.goals}</p></div>}
     {request.adminNote && <div className="sm:col-span-2 lg:col-span-3 rounded-xl bg-secondary/60 p-3"><p className="text-[11px] font-bold text-muted-foreground">ملاحظة الإدارة</p><p className="mt-1 text-sm leading-6">{request.adminNote}</p></div>}
   </div>;
@@ -169,11 +170,11 @@ export default function RegistrationRequestsPage() {
   return <main dir="rtl" className="admin-registrations min-h-[100dvh] px-4 pb-16 pt-7 sm:px-6 lg:px-9">
     <div className="mx-auto max-w-[1440px]">
       <header className="admin-header">
-        <div><p className="eyebrow">GO COURSE · إدارة التسجيل</p><h1>طلبات الالتحاق</h1><p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">مراجعة الطلبات ولقطات الأسعار والتحقق من الدفع، ثم تحويل الطلب المعتمد إلى تسجيل أكاديمي.</p></div>
+        <div><p className="eyebrow">GO COURSE · إدارة التسجيل</p><h1>طلبات التسجيل</h1><p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">مراجعة طلبات الزوار ووصلات الدفع ولقطات الأسعار، ثم تحويل الطلب المعتمد إلى تسجيل أكاديمي.</p></div>
         <div className="header-stamp"><ClipboardList className="h-5 w-5" /><span>لوحة متابعة داخلية</span></div>
       </header>
       <section className="stats-strip" aria-label="ملخص الطلبات">
-        <Stat label="كل الطلبات" value={rows.length} /><Stat label="قيد المراجعة" value={rows.filter((x) => x.status === 'pending_review').length} accent /><Stat label="بانتظار التحقق" value={rows.filter((x) => x.paymentStatus === 'awaiting_verification').length} /><Stat label="تم تحويله" value={rows.filter((x) => x.enrollmentId != null).length} />
+        <Stat label="كل الطلبات" value={rows.length} /><Stat label="قيد المراجعة" value={rows.filter((x) => x.status === 'pending_review').length} accent /><Stat label="بانتظار الدفع أو التحقق" value={rows.filter((x) => x.paymentStatus === 'awaiting_payment' || x.paymentStatus === 'awaiting_verification').length} /><Stat label="تم تحويله" value={rows.filter((x) => x.enrollmentId != null).length} />
       </section>
       <section className="mt-7 rounded-[1.5rem] border border-card-border bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-extrabold">سجل الطلبات</h2><p className="mt-1 text-xs text-muted-foreground">بحث وفلترة على الطلبات الحقيقية المحفوظة</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">{visible.length.toLocaleString('ar')} طلب</span></div>

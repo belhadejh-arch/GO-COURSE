@@ -10,6 +10,7 @@ export type RegistrationAdminRequestPaymentStatus = typeof RegistrationAdminRequ
 
 
 export const RegistrationAdminRequestPaymentStatus = {
+  awaiting_payment: 'awaiting_payment',
   awaiting_verification: 'awaiting_verification',
   verified: 'verified',
   rejected: 'rejected',

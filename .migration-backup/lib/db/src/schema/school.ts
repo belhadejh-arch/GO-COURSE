@@ -60,7 +60,7 @@ export const schoolLinks = pgTable("school_links", {
 
 export const schoolFiles = pgTable("school_files", {
   objectPath: text("object_path").primaryKey(),
-  ownerId: text("owner_id").notNull().references(() => schoolUsers.id),
+  ownerId: text("owner_id").references(() => schoolUsers.id),
   courseId: integer("course_id").references(() => schoolRecords.id),
   name: text("name").notNull(),
   contentType: text("content_type").notNull(),

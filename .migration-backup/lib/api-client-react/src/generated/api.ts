@@ -51,6 +51,8 @@ import type {
   RegistrationQuote,
   RegistrationQuoteInput,
   RegistrationReceipt,
+  RegistrationReceiptUpload,
+  RegistrationReceiptUploadInput,
   RegistrationRequestInput,
   RegistrationRequestUpdateInput,
   ResetSchoolPassword200,
@@ -1297,6 +1299,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCalculateRegistrationQuoteMutationOptions(options));
+    }
+
+export const getCreateRegistrationReceiptUploadUrl = () => {
+
+
+
+
+  return `/api/registration/receipt-uploads`
+}
+
+export const createRegistrationReceiptUpload = async (registrationReceiptUploadInput: RegistrationReceiptUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<RegistrationReceiptUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RegistrationReceiptUpload>(getCreateRegistrationReceiptUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registrationReceiptUploadInput)
+  }
+);}
+
+
+
+
+
+export const getCreateRegistrationReceiptUploadMutationKey = () => ['createRegistrationReceiptUpload'] as const;
+
+export const getCreateRegistrationReceiptUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRegistrationReceiptUpload>>, TError,CreateRegistrationReceiptUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRegistrationReceiptUpload>>, TError,CreateRegistrationReceiptUploadMutationVariables, TContext> => {
+
+const mutationKey = getCreateRegistrationReceiptUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRegistrationReceiptUpload>>, CreateRegistrationReceiptUploadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRegistrationReceiptUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRegistrationReceiptUploadMutationResult = NonNullable<Awaited<ReturnType<typeof createRegistrationReceiptUpload>>>
+    export type CreateRegistrationReceiptUploadMutationBody = BodyType<RegistrationReceiptUploadInput>
+    export type CreateRegistrationReceiptUploadMutationError = ErrorType<unknown>
+    export type CreateRegistrationReceiptUploadMutationVariables = {data: BodyType<RegistrationReceiptUploadInput>}
+
+    export const useCreateRegistrationReceiptUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRegistrationReceiptUpload>>, TError,CreateRegistrationReceiptUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createRegistrationReceiptUpload>>,
+        TError,
+        CreateRegistrationReceiptUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRegistrationReceiptUploadMutationOptions(options));
     }
 
 export const getCreateRegistrationRequestUrl = () => {

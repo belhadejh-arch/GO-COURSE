@@ -17,6 +17,13 @@ export const registrationQuoteInputSchema = z.object({
   totalSessions: z.coerce.number().int().min(1).max(100).optional(),
 }).strict();
 
+export const registrationReceiptUploadInputSchema = z.object({
+  uploadToken: z.string().uuid(),
+  name: z.string().trim().min(1).max(160),
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
+  size: z.number().int().min(1).max(10 * 1024 * 1024),
+}).strict();
+
 const fullName = z.string().trim().min(2, "أدخل الاسم الكامل.").max(160);
 const phone = z.string().trim().transform(value => value.replace(/[^\d+]/g, ""))
   .refine(value => /^\+[1-9]\d{6,14}$/.test(value), "أدخل رقم الهاتف مع رمز الدولة، مثل +213...");
@@ -25,6 +32,7 @@ const cleanOptional = (max: number) => z.string().trim().max(max).optional().def
 
 export const registrationRequestInputSchema = z.object({
   idempotencyKey: z.string().uuid(),
+  receiptUploadToken: z.string().uuid().optional(),
   fullName,
   phone,
   email,
@@ -49,9 +57,9 @@ export const registrationRequestInputSchema = z.object({
   if (data.courseType === "level") {
     if (!data.levelAssessment) ctx.addIssue({ code: "custom", path: ["levelAssessment"], message: "حدّد مستواك الحالي أو اختر اختبار تحديد المستوى." });
     if (data.levelAssessment === "known" && !data.currentLevel) ctx.addIssue({ code: "custom", path: ["currentLevel"], message: "اختر مستواك الحالي." });
-    if (!data.studyMode) ctx.addIssue({ code: "custom", path: ["studyMode"], message: "اختر جماعيًا أو فرديًا VIP." });
-    if (!data.studySystem) ctx.addIssue({ code: "custom", path: ["studySystem"], message: "اختر النظام العادي أو المكثف." });
-    if (!data.weeklySessions) ctx.addIssue({ code: "custom", path: ["weeklySessions"], message: "اختر عدد الحصص الأسبوعية." });
+    if (data.studySystem && !data.weeklySessions) {
+      ctx.addIssue({ code: "custom", path: ["weeklySessions"], message: "اختر عدد الحصص الأسبوعية." });
+    }
     if (data.studySystem === "regular" && data.weeklySessions !== 2) {
       ctx.addIssue({ code: "custom", path: ["weeklySessions"], message: "النظام العادي يعتمد حصتين أسبوعيًا." });
     }
@@ -76,7 +84,7 @@ export const registrationRequestInputSchema = z.object({
   }
   if (data.courseType === "exam") {
     if (!data.examName) ctx.addIssue({ code: "custom", path: ["examName"], message: "اكتب اسم الامتحان المستهدف." });
-    if (!data.totalSessions || ![5, 10, 16, 20, 25, 30, 40, 50].includes(data.totalSessions)) {
+    if (data.totalSessions !== undefined && ![5, 10, 16, 20, 25, 30, 40, 50].includes(data.totalSessions)) {
       ctx.addIssue({ code: "custom", path: ["totalSessions"], message: "اختر باقة تحضير مدعومة من ملف التسعيرات." });
     }
     if (data.studyMode && data.studyMode !== "individual") {
@@ -96,7 +104,7 @@ export const registrationRequestInputSchema = z.object({
 
 export const registrationRequestUpdateSchema = z.object({
   status: z.enum(["pending_review", "accepted", "rejected", "needs_info"]).optional(),
-  paymentStatus: z.enum(["awaiting_verification", "verified", "rejected"]).optional(),
+  paymentStatus: z.enum(["awaiting_payment", "awaiting_verification", "verified", "rejected"]).optional(),
   finalAmount: z.number().finite().min(0).nullable().optional(),
   finalCurrency: z.string().regex(/^[A-Z]{3}$/).optional(),
   finalUnit: z.enum(["monthly", "level", "package"]).optional(),

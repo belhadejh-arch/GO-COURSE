@@ -1,6 +1,6 @@
 import { Router,raw } from "express";
 import { randomUUID } from "node:crypto";
-import { db, schoolRecords, schoolUsers, schoolFiles,schoolFileContents } from "@workspace/db";
+import { db, registrationReceiptUploads, schoolRecords, schoolUsers, schoolFiles,schoolFileContents } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
   CreateSchoolRecordBody, UpdateSchoolRecordBody, RequestSchoolUploadBody,
@@ -265,9 +265,12 @@ router.get("/school/storage/objects/{*path}",async(req,res)=>{
   const objectPath="/objects/"+(Array.isArray(part)?part.join("/"):String(part));
   const [stored]=await db.select().from(schoolFiles).where(eq(schoolFiles.objectPath,objectPath));
   if (!stored) fail(404,"الملف غير موجود.");
+  const [registrationReceipt]=await db.select({id:registrationReceiptUploads.id})
+    .from(registrationReceiptUploads).where(eq(registrationReceiptUploads.objectPath,objectPath)).limit(1);
+  if(registrationReceipt&&a.user.role!=="admin")fail(403,"وصل الدفع لا يمكن عرضه إلا لحساب الإدارة.");
   const contains=(value:unknown):boolean=>value===objectPath || (Array.isArray(value)?value.some(contains):value!==null && typeof value==="object"?Object.values(value).some(contains):false);
   const attached=a.rows.filter(r=>contains(r.data));
-  const permitted=stored.ownerId===a.user.id || privileged(a,"resources") || attached.some(r=>canRead(a,r));
+  const permitted=registrationReceipt?a.user.role==="admin":stored.ownerId===a.user.id || privileged(a,"resources") || attached.some(r=>canRead(a,r));
   if (!permitted) fail(403,"الملف غير مشمول بصلاحياتك أو اشتراكك.");
   if(stored.storageProvider==="database"){res.setHeader("Cache-Control","private, no-store");res.redirect(307,fileTransferUrl(objectPath,"download"));return;}
   const file=await storage.open(objectPath);

@@ -20,6 +20,7 @@ export interface RegistrationRequestInput {
      * @maxLength 36
      */
   idempotencyKey: string;
+  receiptUploadToken?: string;
   /**
      * @minLength 2
      * @maxLength 160

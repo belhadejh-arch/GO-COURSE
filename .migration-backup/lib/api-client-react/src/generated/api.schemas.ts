@@ -409,6 +409,7 @@ export interface RegistrationRequestInput {
      * @maxLength 36
      */
   idempotencyKey: string;
+  receiptUploadToken?: string;
   /**
      * @minLength 2
      * @maxLength 160
@@ -454,6 +455,46 @@ export interface RegistrationRequestInput {
   paymentMethodOther?: string;
 }
 
+export type RegistrationReceiptUploadInputContentType = typeof RegistrationReceiptUploadInputContentType[keyof typeof RegistrationReceiptUploadInputContentType];
+
+
+export const RegistrationReceiptUploadInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface RegistrationReceiptUploadInput {
+  uploadToken: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name: string;
+  contentType: RegistrationReceiptUploadInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+}
+
+export interface RegistrationReceiptUpload {
+  uploadURL: string | null;
+  alreadyUploaded: boolean;
+  alreadyAttached: boolean;
+}
+
+export interface RegistrationPaymentReceipt {
+  id: number;
+  objectPath: string;
+  name: string;
+  contentType: string;
+  size: number;
+  createdAt: string;
+}
+
 export type RegistrationReceiptStatus = typeof RegistrationReceiptStatus[keyof typeof RegistrationReceiptStatus];
 
 
@@ -468,6 +509,7 @@ export type RegistrationReceiptPaymentStatus = typeof RegistrationReceiptPayment
 
 
 export const RegistrationReceiptPaymentStatus = {
+  awaiting_payment: 'awaiting_payment',
   awaiting_verification: 'awaiting_verification',
   verified: 'verified',
   rejected: 'rejected',
@@ -538,6 +580,7 @@ export type RegistrationAdminRequestPaymentStatus = typeof RegistrationAdminRequ
 
 
 export const RegistrationAdminRequestPaymentStatus = {
+  awaiting_payment: 'awaiting_payment',
   awaiting_verification: 'awaiting_verification',
   verified: 'verified',
   rejected: 'rejected',
@@ -579,6 +622,7 @@ export interface RegistrationAdminRequest {
   paymentMethod: RegistrationAdminRequestPaymentMethod;
   paymentMethodOther?: string | null;
   paymentStatus: RegistrationAdminRequestPaymentStatus;
+  paymentReceipt: RegistrationPaymentReceipt | null;
   status: RegistrationAdminRequestStatus;
   quote: RegistrationQuote;
   adminNote?: string;
@@ -602,6 +646,7 @@ export type RegistrationRequestUpdateInputPaymentStatus = typeof RegistrationReq
 
 
 export const RegistrationRequestUpdateInputPaymentStatus = {
+  awaiting_payment: 'awaiting_payment',
   awaiting_verification: 'awaiting_verification',
   verified: 'verified',
   rejected: 'rejected',

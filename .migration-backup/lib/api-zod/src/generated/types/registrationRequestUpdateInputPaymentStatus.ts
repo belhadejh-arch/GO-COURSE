@@ -10,6 +10,7 @@ export type RegistrationRequestUpdateInputPaymentStatus = typeof RegistrationReq
 
 
 export const RegistrationRequestUpdateInputPaymentStatus = {
+  awaiting_payment: 'awaiting_payment',
   awaiting_verification: 'awaiting_verification',
   verified: 'verified',
   rejected: 'rejected',

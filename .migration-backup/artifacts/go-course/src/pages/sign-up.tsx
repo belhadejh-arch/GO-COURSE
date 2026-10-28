@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'wouter';
-import { ArrowLeft, BadgeCheck, BookOpen, Check, Clock3, CreditCard, LoaderCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, BookOpen, Check, Clock3, CreditCard, LoaderCircle, ShieldCheck, Upload, X } from 'lucide-react';
 import {
-  getListSchoolRecordsQueryKey, useCalculateRegistrationQuote, useCreateRegistrationRequest,
+  getListSchoolRecordsQueryKey, useCalculateRegistrationQuote, useCreateRegistrationReceiptUpload, useCreateRegistrationRequest,
   useGetRegistrationOptions, useListSchoolRecords,
 } from '@workspace/api-client-react';
 import type { RegistrationQuote } from '@workspace/api-client-react';
@@ -58,7 +58,7 @@ function QuoteCard({ quote, loading, languageTitle, pending }: { quote: Registra
       </div>}
       <div className="mt-5 flex gap-3 text-xs leading-6 text-muted-foreground"><ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-primary" /><p>هذا عرض من بيانات التسعير الرسمية. أي سعر قيد المراجعة لن يُقدّر أو يُحتسب تلقائيًا.</p></div>
     </div>
-    <div className="bg-secondary/70 px-6 py-4 text-xs font-semibold text-secondary-foreground">اختيار طريقة الدفع تفضيل للتنسيق اليدوي فقط، وليس إثباتًا أو إتمامًا للدفع.</div>
+    <div className="bg-secondary/70 px-6 py-4 text-xs font-semibold text-secondary-foreground">إرفاق الوصل لا يعني تأكيد الدفع؛ تراجعه الإدارة يدويًا.</div>
   </aside>;
 }
 
@@ -67,14 +67,21 @@ export default function SignUpPage() {
   const languages = useListSchoolRecords('languages');
   const quoteMutation = useCalculateRegistrationQuote();
   const create = useCreateRegistrationRequest();
+  const createReceiptUpload = useCreateRegistrationReceiptUpload();
   const [form, setForm] = useState<FormState>(initial);
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [paymentProofType, setPaymentProofType] = useState('');
+  const [receiptUploadToken, setReceiptUploadToken] = useState('');
+  const [fileError, setFileError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [submissionBusy, setSubmissionBusy] = useState(false);
   const [quote, setQuote] = useState<RegistrationQuote | null>(null);
   const [quoteError, setQuoteError] = useState('');
   const [receipt, setReceipt] = useState<{
     requestNo: string;
     quote: RegistrationQuote;
     status: 'pending_review' | 'accepted' | 'rejected' | 'needs_info';
-    paymentStatus: 'awaiting_verification' | 'verified' | 'rejected';
+    paymentStatus: 'awaiting_payment' | 'awaiting_verification' | 'verified' | 'rejected';
   } | null>(null);
   const [validation, setValidation] = useState('');
   const idempotencyRef = useRef({ fingerprint: '', key: '' });
@@ -83,7 +90,7 @@ export default function SignUpPage() {
   quoteMutateRef.current = quoteMutation.mutate;
   const set = (key: keyof FormState, value: string) => setForm((s) => ({ ...s, [key]: value }));
   const activePricing = useMemo(() => (options.data?.pricingOptions ?? []).filter((x) => x.active), [options.data]);
-  const availableLanguages = useMemo(() => (languages.data ?? []).filter((language) => language.status !== 'draft' && language.status !== 'archived' && activePricing.some((option) => option.languageId == null || option.languageId === language.id)), [languages.data, activePricing]);
+  const availableLanguages = useMemo(() => (languages.data ?? []).filter((language) => language.status !== 'draft' && language.status !== 'archived'), [languages.data]);
   const languageId = Number(form.languageId);
   const countryPricing = useMemo(() => activePricing.filter((x) => x.country === form.country && (x.languageId == null || x.languageId === languageId) && x.courseType === form.courseType), [activePricing, form.country, form.courseType, languageId]);
   const modeOptions = useMemo(() => [...new Set(countryPricing.map((x) => x.studyMode).filter(Boolean))], [countryPricing]);
@@ -91,25 +98,28 @@ export default function SignUpPage() {
   const packages = useMemo(() => countryPricing.filter((x) => x.totalSessions != null), [countryPricing]);
   const intensiveWeekly = useMemo(() => [...new Set(countryPricing.filter((x) => x.studySystem === 'intensive' && (!form.studyMode || x.studyMode === form.studyMode)).map((x) => x.weeklySessions).filter((n): n is number => n != null))].sort((a, b) => a - b), [countryPricing, form.studyMode]);
   const eligibleMethods = useMemo(() => (options.data?.paymentMethods ?? []).filter((method) => method.countries.includes(form.country)), [options.data, form.country]);
+  const receiptRequired = !!quote && quote.amount != null && (quote.status === 'approved' || quote.status === 'admin_approved');
 
   useEffect(() => {
     const version = ++quoteVersionRef.current;
     setQuote(null); setQuoteError('');
-    if (!form.languageId || !form.studyMode) return;
-    if (form.courseType === 'level' && (!form.studySystem || (form.studySystem === 'intensive' && !form.weeklySessions))) return;
-    if (form.courseType === 'exam' && !form.totalSessions) return;
+    if (!form.languageId) return;
+    if (modeOptions.length > 0 && !form.studyMode) return;
+    if (form.courseType === 'level' && systemOptions.length > 0 && !form.studySystem) return;
+    if (form.courseType === 'level' && form.studySystem === 'intensive' && !form.weeklySessions) return;
+    if (form.courseType === 'exam' && packages.length > 0 && !form.totalSessions) return;
     const request = {
       country: form.country, languageId, courseType: form.courseType as 'level' | 'conversation' | 'exam',
-      studyMode: form.studyMode as 'group' | 'individual',
-      ...(form.courseType === 'level' ? { studySystem: form.studySystem as 'regular' | 'intensive', weeklySessions: form.studySystem === 'regular' ? 2 : Number(form.weeklySessions) } : {}),
-      ...(form.courseType === 'exam' ? { totalSessions: Number(form.totalSessions) } : {}),
+      ...(form.studyMode ? { studyMode: form.studyMode as 'group' | 'individual' } : {}),
+      ...(form.courseType === 'level' && form.studySystem ? { studySystem: form.studySystem as 'regular' | 'intensive', weeklySessions: form.studySystem === 'regular' ? 2 : Number(form.weeklySessions) } : {}),
+      ...(form.courseType === 'exam' && form.totalSessions ? { totalSessions: Number(form.totalSessions) } : {}),
     };
     const timer = window.setTimeout(() => quoteMutateRef.current({ data: request }, {
       onSuccess: (result) => { if (version === quoteVersionRef.current) { setQuote(result); setQuoteError(''); } },
       onError: (error) => { if (version === quoteVersionRef.current) setQuoteError(errMsg(error)); },
     }), 280);
     return () => { window.clearTimeout(timer); quoteVersionRef.current += 1; };
-  }, [form.country, form.languageId, form.courseType, form.studyMode, form.studySystem, form.weeklySessions, form.totalSessions, languageId]);
+  }, [form.country, form.languageId, form.courseType, form.studyMode, form.studySystem, form.weeklySessions, form.totalSessions, languageId, modeOptions, systemOptions, packages]);
 
   useEffect(() => {
     if (!form.languageId) return;
@@ -122,39 +132,45 @@ export default function SignUpPage() {
     if (form.paymentMethod && !eligibleMethods.some((method) => method.code === form.paymentMethod)) set('paymentMethod', '');
   }, [form.languageId, form.country, form.courseType, form.studyMode, form.studySystem, form.totalSessions, form.paymentMethod, countryPricing, systemOptions, packages, eligibleMethods]);
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     setValidation('');
+    setSubmitError('');
     if (form.fullName.trim().length < 2) { setValidation('يرجى إدخال الاسم الكامل بشكل صحيح.'); return; }
     if (form.phone.trim().length < 7 || form.phone.trim().length > 32) { setValidation('يرجى إدخال رقم هاتف دولي صحيح مع مفتاح الدولة.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) { setValidation('يرجى إدخال بريد إلكتروني صحيح.'); return; }
-    if (!form.fullName.trim() || !form.phone.trim() || !form.email.trim() || !form.languageId || !form.paymentMethod || !form.studyMode) {
-      setValidation('يرجى إكمال الاسم ورقم الهاتف والبريد واللغة ونمط الدراسة وطريقة الدفع.'); return;
+    if (!form.fullName.trim() || !form.phone.trim() || !form.email.trim() || !form.languageId || !form.paymentMethod) {
+      setValidation('يرجى إكمال الاسم ورقم الهاتف والبريد واللغة وطريقة الدفع.'); return;
     }
-    if (form.courseType === 'level' && (!form.levelAssessment || (form.levelAssessment === 'known' && !form.currentLevel) || !form.targetLevel || !form.studySystem || !form.weeklySessions)) {
+    if (modeOptions.length > 0 && !form.studyMode) { setValidation('يرجى اختيار نمط الدراسة المتاح.'); return; }
+    if (receiptRequired && (!paymentProof || !receiptUploadToken || !paymentProofType)) { setValidation('يرجى رفع صورة أو ملف PDF لوصل الدفع بعد دفع المبلغ المعتمد.'); return; }
+    if (receiptRequired && paymentProof && (paymentProof.size < 1 || paymentProof.size > 10 * 1024 * 1024)) { setValidation('يجب ألا يتجاوز حجم وصل الدفع 10 ميغابايت.'); return; }
+    if (form.courseType === 'level' && (!form.levelAssessment || (form.levelAssessment === 'known' && !form.currentLevel) || !form.targetLevel || (systemOptions.length > 0 && !form.studySystem) || (!!form.studySystem && !form.weeklySessions))) {
       setValidation('يرجى إكمال تقييم المستوى والمستوى المستهدف وتفاصيل الدراسة.'); return;
     }
     if (form.courseType === 'conversation' && !form.goals.trim()) { setValidation('يرجى كتابة هدفك من تحسين المحادثة.'); return; }
-    if (form.courseType === 'exam' && (!form.totalSessions || !form.examName.trim())) {
+    if (form.courseType === 'exam' && (!form.examName.trim() || (packages.length > 0 && !form.totalSessions))) {
       setValidation('يرجى اختيار الاختبار وحجم الباقة المتاح.'); return;
     }
     if (!quote) { setValidation('انتظر تحديث عرض السعر قبل إرسال الطلب.'); return; }
     if (form.paymentMethod === 'other' && !form.paymentMethodOther.trim()) { setValidation('يرجى توضيح طريقة الدفع المقترحة.'); return; }
     const payloadFields = {
+      ...(receiptRequired ? { receiptUploadToken } : {}),
       fullName: form.fullName.trim(), phone: form.phone.trim(), email: form.email.trim(),
       country: form.country, goals: form.goals.trim() || undefined, languageId, courseType: form.courseType,
       ...(form.courseType === 'level' ? {
         levelAssessment: form.levelAssessment as 'beginner' | 'placement_test' | 'known',
         ...(form.levelAssessment === 'known' ? { currentLevel: form.currentLevel as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' } : {}),
         targetLevel: form.targetLevel as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2',
-        studyMode: form.studyMode as 'group' | 'individual', studySystem: form.studySystem as 'regular' | 'intensive',
-        weeklySessions: form.studySystem === 'regular' ? 2 : Number(form.weeklySessions), schedulePreferences: form.schedulePreferences.trim() || undefined,
+        ...(form.studyMode ? { studyMode: form.studyMode as 'group' | 'individual' } : {}),
+        ...(form.studySystem ? { studySystem: form.studySystem as 'regular' | 'intensive', weeklySessions: form.studySystem === 'regular' ? 2 : Number(form.weeklySessions) } : {}),
+        schedulePreferences: form.schedulePreferences.trim() || undefined,
       } : {
-        studyMode: form.studyMode as 'group' | 'individual',
+        ...(form.studyMode ? { studyMode: form.studyMode as 'group' | 'individual' } : {}),
         ...(form.courseType === 'conversation' ? { schedulePreferences: form.schedulePreferences.trim() || undefined } : {}),
         ...(form.courseType === 'exam' ? {
           ...(form.currentLevel ? { currentLevel: form.currentLevel as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' } : {}),
-          totalSessions: Number(form.totalSessions), examName: form.examName.trim(), targetScore: form.targetScore.trim() || undefined,
+          ...(form.totalSessions ? { totalSessions: Number(form.totalSessions) } : {}), examName: form.examName.trim(), targetScore: form.targetScore.trim() || undefined,
           examDate: form.examDate || undefined, schedulePreferences: form.schedulePreferences.trim() || undefined,
         } : {}),
       }),
@@ -165,21 +181,69 @@ export default function SignUpPage() {
     if (idempotencyRef.current.fingerprint !== fingerprint) {
       idempotencyRef.current = { fingerprint, key: crypto.randomUUID() };
     }
-    create.mutate({ data: { idempotencyKey: idempotencyRef.current.key, ...payloadFields } }, {
-      onSuccess: (result) => setReceipt({ requestNo: result.requestNo, quote: result.quote, status: result.status, paymentStatus: result.paymentStatus }),
-    });
+    setSubmissionBusy(true);
+    try {
+      if (receiptRequired && paymentProof) {
+        const uploadInput = {
+          uploadToken: receiptUploadToken,
+          name: paymentProof.name,
+          contentType: paymentProofType as 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf',
+          size: paymentProof.size,
+        };
+        let upload = await createReceiptUpload.mutateAsync({ data: uploadInput });
+        if (!upload.alreadyUploaded) {
+          if (!upload.uploadURL) throw new Error('تعذّر إنشاء رابط آمن لرفع الوصل.');
+          let put = await fetch(upload.uploadURL, { method: 'PUT', headers: { 'Content-Type': paymentProofType }, body: paymentProof });
+          if (!put.ok) {
+            upload = await createReceiptUpload.mutateAsync({ data: uploadInput });
+            if (!upload.alreadyUploaded && upload.uploadURL) {
+              put = await fetch(upload.uploadURL, { method: 'PUT', headers: { 'Content-Type': paymentProofType }, body: paymentProof });
+            }
+            if (!upload.alreadyUploaded && !put.ok) throw new Error('تعذّر رفع الوصل. تحقق من اتصالك ثم أعد المحاولة.');
+          }
+        }
+      }
+      const result = await create.mutateAsync({ data: { idempotencyKey: idempotencyRef.current.key, ...payloadFields } });
+      setReceipt({ requestNo: result.requestNo, quote: result.quote, status: result.status, paymentStatus: result.paymentStatus });
+    } catch (error) {
+      setSubmitError(errMsg(error));
+    } finally {
+      setSubmissionBusy(false);
+    }
+  }
+
+  function choosePaymentProof(file?: File) {
+    setFileError('');
+    setSubmitError('');
+    if (!file) return;
+    const inferredType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '');
+    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(inferredType)) {
+      setPaymentProof(null); setPaymentProofType(''); setReceiptUploadToken('');
+      setFileError('نوع الملف غير مدعوم. ارفع صورة JPG أو PNG أو WEBP أو ملف PDF.'); return;
+    }
+    if (file.size < 1 || file.size > 10 * 1024 * 1024) {
+      setPaymentProof(null); setPaymentProofType(''); setReceiptUploadToken('');
+      setFileError('يجب أن يكون الملف غير فارغ وألا يتجاوز 10 ميغابايت.'); return;
+    }
+    setPaymentProof(file);
+    setPaymentProofType(inferredType);
+    setReceiptUploadToken(crypto.randomUUID());
   }
 
   const control = (key: keyof FormState, testId: string, type = 'text', placeholder = '') => <input className="field-input min-h-11" type={type} value={form[key]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} data-testid={testId} />;
   const selectOptions = (key: keyof FormState, testId: string, values: [string, string][], placeholder: string, disabled = false) => <Select value={form[key]} onChange={(v) => set(key, v)} testId={testId} disabled={disabled}><option value="">{placeholder}</option>{values.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</Select>;
   function retryQuote() {
-    if (!form.languageId || !form.studyMode || (form.courseType === 'level' && (!form.studySystem || (form.studySystem === 'intensive' && !form.weeklySessions))) || (form.courseType === 'exam' && !form.totalSessions)) return;
+    if (!form.languageId || (modeOptions.length > 0 && !form.studyMode) ||
+      (form.courseType === 'level' && systemOptions.length > 0 && !form.studySystem) ||
+      (form.courseType === 'level' && form.studySystem === 'intensive' && !form.weeklySessions) ||
+      (form.courseType === 'exam' && packages.length > 0 && !form.totalSessions)) return;
     const version = ++quoteVersionRef.current;
     setQuoteError('');
     quoteMutation.mutate({ data: {
-      country: form.country, languageId, courseType: form.courseType, studyMode: form.studyMode as 'group' | 'individual',
-      ...(form.courseType === 'level' ? { studySystem: form.studySystem as 'regular' | 'intensive', weeklySessions: form.studySystem === 'regular' ? 2 : Number(form.weeklySessions) } : {}),
-      ...(form.courseType === 'exam' ? { totalSessions: Number(form.totalSessions) } : {}),
+      country: form.country, languageId, courseType: form.courseType,
+      ...(form.studyMode ? { studyMode: form.studyMode as 'group' | 'individual' } : {}),
+      ...(form.courseType === 'level' && form.studySystem ? { studySystem: form.studySystem as 'regular' | 'intensive', weeklySessions: form.studySystem === 'regular' ? 2 : Number(form.weeklySessions) } : {}),
+      ...(form.courseType === 'exam' && form.totalSessions ? { totalSessions: Number(form.totalSessions) } : {}),
     } }, {
       onSuccess: (result) => { if (version === quoteVersionRef.current) { setQuote(result); setQuoteError(''); } },
       onError: (error) => { if (version === quoteVersionRef.current) setQuoteError(errMsg(error)); },
@@ -215,9 +279,10 @@ export default function SignUpPage() {
           <p className="mt-3 text-sm leading-7">{receipt.quote.message}</p>
           {receipt.quote.amount != null && <p className="mt-2 text-xl font-extrabold text-primary">{receipt.quote.amount.toLocaleString('ar')} {receipt.quote.currency} · {receipt.quote.unit === 'monthly' ? 'شهري' : receipt.quote.unit === 'level' ? 'للمستوى' : 'للباقة'}</p>}
         </div>
-        <p className="mt-5 text-sm leading-7 text-muted-foreground">
+          <p className="mt-5 rounded-xl bg-secondary/60 p-4 text-sm leading-7 text-muted-foreground">{receipt.paymentStatus === 'awaiting_payment' ? 'تم تسجيل طلبك. انتظر اعتماد السعر من الإدارة قبل الدفع؛ يمكنك بعد ذلك التنسيق معها لرفع الوصل.' : 'تم إرفاق وصل الدفع وإرساله للمراجعة داخل لوحة الإدارة. تبقى حالة الدفع بانتظار التحقق اليدوي.'}</p>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
           حالة الطلب: <strong>{receipt.status === 'pending_review' ? 'بانتظار مراجعة الإدارة' : receipt.status === 'accepted' ? 'مقبول' : receipt.status === 'rejected' ? 'مرفوض' : 'بانتظار معلومات إضافية'}</strong>.
-          حالة الدفع: <strong>{receipt.paymentStatus === 'awaiting_verification' ? 'بانتظار التحقق اليدوي' : receipt.paymentStatus === 'verified' ? 'تم التحقق' : 'مرفوض'}</strong>.
+            حالة الدفع: <strong>{receipt.paymentStatus === 'awaiting_payment' ? 'بانتظار اعتماد السعر والدفع' : receipt.paymentStatus === 'awaiting_verification' ? 'بانتظار التحقق اليدوي' : receipt.paymentStatus === 'verified' ? 'تم التحقق' : 'مرفوض'}</strong>.
           اختيار وسيلة الدفع لا يعني إتمام الدفع. لم يتم إنشاء حساب لك.
         </p>
         <Link href="/" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-primary px-5 font-bold text-primary-foreground" data-testid="link-success-home">العودة إلى الموقع</Link>
@@ -240,7 +305,7 @@ export default function SignUpPage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Field label="اللغة *">{selectOptions('languageId', 'select-language', availableLanguages.map((l) => [String(l.id), l.title]), languages.isLoading ? 'جارٍ تحميل اللغات…' : 'اختر اللغة', options.isLoading || languages.isLoading)}{!languages.isLoading && !availableLanguages.length && <span className="mt-2 block text-xs text-muted-foreground">لا توجد لغة متاحة للتسجيل حاليًا.</span>}</Field>
               <Field label="نوع البرنامج *">{selectOptions('courseType', 'select-course-type', Object.entries(courseLabels), 'اختر نوع البرنامج')}</Field>
-              <Field label="نمط الدراسة *">{selectOptions('studyMode', 'select-study-mode', modeOptions.map((m) => [m!, m === 'group' ? 'جماعي' : 'فردي']), 'اختر النمط', !form.languageId || !modeOptions.length)}</Field>
+              <Field label={modeOptions.length ? 'نمط الدراسة *' : 'نمط الدراسة'}>{selectOptions('studyMode', 'select-study-mode', modeOptions.map((m) => [m!, m === 'group' ? 'جماعي' : 'فردي']), modeOptions.length ? 'اختر النمط' : 'تحدده الإدارة عند مراجعة الطلب', !form.languageId || !modeOptions.length)}</Field>
             </div>
             {form.courseType === 'level' && <div className="mt-6 border-t border-border pt-6">
               <h3 className="mb-4 text-sm font-extrabold">تفاصيل تحسين المستوى</h3>
@@ -248,12 +313,12 @@ export default function SignUpPage() {
                 <Field label="تقييم مستواك الحالي *">{selectOptions('levelAssessment', 'select-level-assessment', [['beginner', 'مبتدئ تمامًا'], ['placement_test', 'أرغب باختبار تحديد المستوى'], ['known', 'أعرف مستواي']], 'اختر طريقة التقييم')}</Field>
                 {form.levelAssessment === 'known' && <Field label="المستوى الحالي *">{selectOptions('currentLevel', 'select-current-level', levels.map((v) => [v, v]), 'اختر مستواك')}</Field>}
                 <Field label="المستوى الذي تريد الوصول إليه *">{selectOptions('targetLevel', 'select-target-level', levels.map((v) => [v, v]), 'اختر المستوى المستهدف')}</Field>
-                <Field label="نظام الدراسة *">{selectOptions('studySystem', 'select-study-system', systemOptions.map((s) => [s!, s === 'regular' ? 'عادي' : 'مكثّف']), 'اختر النظام', !form.studyMode || !systemOptions.length)}</Field>
+                {systemOptions.length > 0 && <Field label="نظام الدراسة *">{selectOptions('studySystem', 'select-study-system', systemOptions.map((s) => [s!, s === 'regular' ? 'عادي' : 'مكثّف']), 'اختر النظام', !form.studyMode || !systemOptions.length)}</Field>}
                 {form.studySystem === 'regular' && <Field label="الدروس أسبوعيًا *"><Select value={form.weeklySessions || '2'} onChange={(v) => set('weeklySessions', v)} testId="select-weekly-sessions"><option value="2">درسان أسبوعيًا</option></Select></Field>}
                 {form.studySystem === 'intensive' && <Field label="الدروس أسبوعيًا *">{selectOptions('weeklySessions', 'select-intensive-sessions', intensiveWeekly.map((n) => [String(n), `${n} دروس أسبوعيًا`]), 'اختر عدد الدروس')}</Field>}
                 <div className="sm:col-span-2"><Field label="الأوقات المفضلة" hint="اختياري"><input className="field-input min-h-11" value={form.schedulePreferences} onChange={(e) => set('schedulePreferences', e.target.value)} maxLength={500} placeholder="مثال: مساءً خلال أيام الأسبوع" data-testid="input-schedule-preferences" /></Field></div>
               </div>
-              {!systemOptions.length && form.languageId && form.studyMode && <p className="mt-4 rounded-xl bg-secondary/70 p-3 text-xs leading-6 text-muted-foreground">لا توجد تفاصيل تسعير لهذا الخيار بعد. تواصل مع الإدارة للمساعدة.</p>}
+              {!systemOptions.length && form.languageId && <p className="mt-4 rounded-xl bg-secondary/70 p-3 text-xs leading-6 text-muted-foreground">لا توجد تسعيرة معتمدة لهذا الخيار بعد. أرسل الطلب دون دفع، وستحدد الإدارة التفاصيل والسعر.</p>}
             </div>}
             {form.courseType === 'conversation' && <div className="mt-6 border-t border-border pt-6">
               <h3 className="mb-4 text-sm font-extrabold">تفاصيل تحسين المحادثة</h3>
@@ -267,29 +332,44 @@ export default function SignUpPage() {
               <h3 className="mb-4 text-sm font-extrabold">تفاصيل التحضير للاختبار</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="اسم الاختبار *"><input className="field-input min-h-11" value={form.examName} onChange={(e) => set('examName', e.target.value)} maxLength={100} placeholder="مثال: IELTS" data-testid="input-exam-name" /></Field>
-                <Field label="حجم الباقة *">{selectOptions('totalSessions', 'select-package-size', [...new Set(packages.map((x) => x.totalSessions).filter((v): v is number => v != null))].sort((a, b) => a - b).map((n) => [String(n), `${n} حصة`]), 'اختر باقة متاحة', !form.studyMode)}</Field>
+                <Field label={packages.length ? 'حجم الباقة *' : 'حجم الباقة'}>{selectOptions('totalSessions', 'select-package-size', [...new Set(packages.map((x) => x.totalSessions).filter((v): v is number => v != null))].sort((a, b) => a - b).map((n) => [String(n), `${n} حصة`]), packages.length ? 'اختر باقة متاحة' : 'تحددها الإدارة عند مراجعة الطلب', !form.studyMode || !packages.length)}</Field>
                 <Field label="المستوى الحالي">{selectOptions('currentLevel', 'select-exam-current-level', levels.map((v) => [v, v]), 'اختياري')}</Field>
                 <Field label="الدرجة المستهدفة">{control('targetScore', 'input-target-score', 'text', 'اختياري')}</Field>
                 <Field label="تاريخ الاختبار">{control('examDate', 'input-exam-date', 'date')}</Field>
                 <div className="sm:col-span-2"><Field label="الأوقات المناسبة" hint="اختياري"><input className="field-input min-h-11" value={form.schedulePreferences} onChange={(e) => set('schedulePreferences', e.target.value)} maxLength={500} placeholder="مثال: صباحًا أو مساءً" data-testid="input-exam-schedule" /></Field></div>
               </div>
-              {!packages.length && form.languageId && form.studyMode && <p className="mt-4 text-xs text-muted-foreground">لا توجد باقات اختبار منشورة لهذا الاختيار.</p>}
+              {!packages.length && form.languageId && <p className="mt-4 rounded-xl bg-secondary/70 p-3 text-xs leading-6 text-muted-foreground">لا توجد باقة معتمدة لهذا الاختيار بعد. أرسل الطلب دون دفع لتراجع الإدارة التفاصيل.</p>}
             </div>}
           </section>
           <section className="form-section rounded-[1.6rem] border border-card-border bg-card p-5 shadow-sm sm:p-7">
-            <div className="section-heading"><span>03</span><div><h2>تفضيل الدفع</h2><p>للتنسيق اليدوي بعد مراجعة الطلب فقط</p></div></div>
-            <p className="mt-5 rounded-xl border border-accent/40 bg-accent/15 p-4 text-xs leading-6">اختر الطريقة التي تفضلها. هذا الاختيار لا يسدد الرسوم، ولا يرسل إشعارًا بإتمام الدفع.</p>
+            <div className="section-heading"><span>03</span><div><h2>الدفع وإرفاق الوصل</h2><p>أرفق إثبات التحويل ليراجعه فريق الإدارة</p></div></div>
+            <p className="mt-5 rounded-xl border border-accent/40 bg-accent/15 p-4 text-xs leading-6">اختر وسيلة الدفع التي ستستخدمها. لا تدفع قبل اعتماد المبلغ من الإدارة؛ وعند ظهور سعر معتمد، ارفع وصل التحويل لتراجعه الإدارة.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {eligibleMethods.map((method) => <label key={method.code} className={`payment-choice ${form.paymentMethod === method.code ? 'is-selected' : ''}`}><input type="radio" name="payment-method" value={method.code} checked={form.paymentMethod === method.code} onChange={() => set('paymentMethod', method.code)} data-testid={`radio-payment-${method.code}`} /><span><strong>{method.label}</strong><small>{method.manualOnly ? 'تنسيق يدوي مع الإدارة' : 'تفضيل للتنسيق مع الإدارة'}</small></span></label>)}
             </div>
             {!eligibleMethods.length && <p className="mt-3 text-sm text-muted-foreground">لا توجد طرق دفع مهيأة لبلد الإقامة المختار.</p>}
             {form.paymentMethod === 'other' && <div className="mt-4"><Field label="اذكر طريقة الدفع المقترحة *"><input className="field-input min-h-11" value={form.paymentMethodOther} onChange={(e) => set('paymentMethodOther', e.target.value)} maxLength={120} data-testid="input-payment-other" /></Field></div>}
+            {receiptRequired ? <div className="mt-5">
+              <Field label="وصل الدفع *" hint="الملفات المسموحة: JPG أو PNG أو WEBP أو PDF، بحد أقصى 10 ميغابايت.">
+                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-input bg-card p-3">
+                  <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground hover:brightness-105">
+                    <Upload className="h-4 w-4" />{paymentProof ? 'استبدال الوصل' : 'اختيار وصل الدفع'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.pdf" className="sr-only" onChange={(e) => { choosePaymentProof(e.currentTarget.files?.[0]); e.currentTarget.value = ''; }} data-testid="input-payment-proof" />
+                  </label>
+                  {paymentProof && <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate font-semibold" dir="auto">{paymentProof.name} · {(paymentProof.size / (1024 * 1024)).toFixed(2)} MB</span>
+                    <button type="button" aria-label="إزالة وصل الدفع" className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" onClick={() => { setPaymentProof(null); setPaymentProofType(''); setReceiptUploadToken(''); setFileError(''); }} data-testid="button-remove-payment-proof"><X className="h-4 w-4" /></button>
+                  </div>}
+                </div>
+              </Field>
+              {fileError && <p role="alert" className="mt-2 text-xs font-semibold text-destructive" data-testid="text-payment-proof-error">{fileError}</p>}
+            </div> : <p className="mt-5 rounded-xl bg-secondary/60 p-4 text-xs leading-6 text-muted-foreground">{quote?.status === 'needs_review' || quote?.amount == null ? 'السعر يحتاج إلى تأكيد الإدارة. أرسل طلبك دون دفع؛ لا ترفع الوصل قبل اعتماد المبلغ.' : 'أكمل اختيارات البرنامج لعرض السعر قبل الدفع.'}</p>}
           </section>
           {validation && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-bold text-destructive" data-testid="status-validation-error">{validation}</p>}
           {quoteError && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm"><span>تعذر تحديث عرض السعر: {quoteError}</span><button type="button" className="font-bold text-primary underline" onClick={retryQuote} data-testid="button-retry-quote">إعادة المحاولة</button></div>}
-          {create.isError && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">تعذّر إرسال الطلب: {errMsg(create.error)}</p>}
-          <button type="submit" disabled={create.isPending || options.isLoading || languages.isLoading} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-extrabold text-primary-foreground shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60" data-testid="button-submit-registration">{create.isPending ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}{create.isPending ? 'جارٍ إرسال الطلب…' : 'إرسال طلب الالتحاق'}</button>
-          <p className="text-center text-xs leading-6 text-muted-foreground">بإرسال الطلب، فأنت تطلب مراجعة الالتحاق فقط. لا يتم إنشاء حساب أو إتمام أي عملية دفع.</p>
+          {submitError && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm" data-testid="status-registration-submit-error">{submitError}</p>}
+          <button type="submit" disabled={submissionBusy || create.isPending || options.isLoading || languages.isLoading} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 text-base font-extrabold text-primary-foreground shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60" data-testid="button-submit-registration">{submissionBusy || create.isPending ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}{submissionBusy || create.isPending ? 'جارٍ رفع الوصل وإرسال الطلب…' : 'إرسال طلب التسجيل'}</button>
+          <p className="text-center text-xs leading-6 text-muted-foreground">إذا كان السعر معتمدًا، يُحفظ الطلب مع الوصل وتبقى حالة الدفع بانتظار التحقق. لا يتم إنشاء حساب أو اعتماد الدفع تلقائيًا.</p>
         </form>
         <div className="space-y-4">
           <QuoteCard quote={quote} loading={quoteMutation.isPending} languageTitle={availableLanguages.find((l) => l.id === languageId)?.title ?? ''} pending={quoteError} />

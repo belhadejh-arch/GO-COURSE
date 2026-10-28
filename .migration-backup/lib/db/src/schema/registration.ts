@@ -12,7 +12,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { schoolRecords, schoolUsers } from "./school";
+import { schoolFiles, schoolRecords, schoolUsers } from "./school";
 
 export const registrationPricingRules = pgTable("registration_pricing_rules", {
   id: serial("id").primaryKey(),
@@ -61,7 +61,7 @@ export const registrationRequests = pgTable("registration_requests", {
   courseType: text("course_type").notNull(),
   paymentMethod: text("payment_method").notNull(),
   paymentMethodOther: text("payment_method_other"),
-  paymentStatus: text("payment_status").notNull().default("awaiting_verification"),
+  paymentStatus: text("payment_status").notNull().default("awaiting_payment"),
   status: text("status").notNull().default("pending_review"),
   priceRuleId: integer("price_rule_id").references(() => registrationPricingRules.id, { onDelete: "set null" }),
   priceStatus: text("price_status").notNull(),
@@ -78,9 +78,24 @@ export const registrationRequests = pgTable("registration_requests", {
   check("registration_request_country", sql`${t.country} in ('algeria','outside_algeria')`),
   check("registration_request_course_type", sql`${t.courseType} in ('level','conversation','exam')`),
   check("registration_request_payment_method", sql`${t.paymentMethod} in ('ccp','baridi_mob','edahabia_cib','international_manual','other')`),
-  check("registration_request_payment_status", sql`${t.paymentStatus} in ('awaiting_verification','verified','rejected')`),
+  check("registration_request_payment_status", sql`${t.paymentStatus} in ('awaiting_payment','awaiting_verification','verified','rejected')`),
   check("registration_request_status", sql`${t.status} in ('pending_review','accepted','rejected','needs_info')`),
   check("registration_request_price_status", sql`${t.priceStatus} in ('approved','needs_review','admin_approved')`),
+]);
+
+export const registrationReceiptUploads = pgTable("registration_receipt_uploads", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").references(() => registrationRequests.id),
+  objectPath: text("object_path").notNull().unique().references(() => schoolFiles.objectPath),
+  uploadTokenHash: text("upload_token_hash").notNull().unique(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  attachedAt: timestamp("attached_at", { withTimezone: true }),
+}, (t) => [
+  index("registration_receipt_request").on(t.requestId),
+  index("registration_receipt_expiry").on(t.status, t.expiresAt),
+  check("registration_receipt_status", sql`${t.status} in ('pending','attached')`),
 ]);
 
 export const registrationRequestAudit = pgTable("registration_request_audit", {

@@ -33,8 +33,9 @@ export default function Landing() {
               مدرسة GO COURSE تجمع حصصك ودروسك وواجباتك واشتراكك في مكان واحد، لتعرف كل صباح ما الذي ينتظرك اليوم وإلى أين وصلت في طريقك من A1 إلى C2.
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-8 flex flex-wrap gap-3">
-              <Link href="/courses" className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 font-bold text-primary-foreground shadow-lg transition-transform hover:-translate-y-0.5" data-testid="link-hero-courses">استعرض الدورات <ArrowLeft className="h-4 w-4" /></Link>
-              <Link href="/sign-in" className="inline-flex h-12 items-center rounded-2xl border border-input bg-card px-6 font-bold transition-colors hover:bg-secondary" data-testid="link-hero-signup">تسجيل الدخول</Link>
+              <Link href="/sign-up" className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 font-bold text-primary-foreground shadow-lg transition-transform hover:-translate-y-0.5" data-testid="link-hero-registration">سجّل الآن <ArrowLeft className="h-4 w-4" /></Link>
+              <Link href="/courses" className="inline-flex h-12 items-center rounded-2xl border border-input bg-card px-6 font-bold transition-colors hover:bg-secondary" data-testid="link-hero-courses">استعرض الدورات</Link>
+              <Link href="/sign-in" className="inline-flex h-12 items-center rounded-2xl border border-input bg-card px-6 font-bold transition-colors hover:bg-secondary" data-testid="link-hero-signin">تسجيل الدخول</Link>
             </motion.div>
           </div>
           <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.12, duration: 0.6 }} className="relative mx-auto aspect-square w-full max-w-md">
@@ -108,9 +109,9 @@ export default function Landing() {
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-primary to-[hsl(var(--chart-2))] p-8 text-primary-foreground sm:p-12">
           <BookOpenCheck className="absolute -start-6 -bottom-6 h-44 w-44 opacity-15" />
           <h2 className="max-w-lg text-3xl font-extrabold">ابدأ بدورتك الأولى اليوم</h2>
-          <p className="mt-2 max-w-lg opacity-90">تصفّح الباقات، ثم استخدم بيانات الدخول التي تسلّمها لك إدارة المدرسة.</p>
+          <p className="mt-2 max-w-lg opacity-90">اختر اللغة والبرنامج، وأرسل طلب التسجيل مع وصل الدفع لتراجعه إدارة المدرسة.</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/sign-up" className="inline-flex h-11 items-center rounded-xl bg-accent px-6 font-bold text-accent-foreground" data-testid="link-cta-signup">إنشاء حساب</Link>
+            <Link href="/sign-up" className="inline-flex h-11 items-center rounded-xl bg-accent px-6 font-bold text-accent-foreground" data-testid="link-cta-signup">إرسال طلب التسجيل</Link>
             <Link href="/plans" className="inline-flex h-11 items-center rounded-xl bg-white/15 px-6 font-bold" data-testid="link-cta-plans">الباقات</Link>
           </div>
         </div>

@@ -10,6 +10,7 @@ export type RegistrationReceiptPaymentStatus = typeof RegistrationReceiptPayment
 
 
 export const RegistrationReceiptPaymentStatus = {
+  awaiting_payment: 'awaiting_payment',
   awaiting_verification: 'awaiting_verification',
   verified: 'verified',
   rejected: 'rejected',
