@@ -407,6 +407,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     { href: '/students', label: 'الطلاب', icon: 'Users', roles: ['admin', 'staff', 'teacher'] },
     { href: '/teachers', label: 'الأساتذة', icon: 'Presentation', roles: ['admin', 'staff'] },
     { href: '/enrollments', label: 'التسجيلات', icon: 'UserPlus', roles: ['admin', 'staff'] },
+    { href: '/registration-requests', label: 'طلبات التسجيل', icon: 'ClipboardList', roles: ['admin'] },
   ] },
   { group: 'المالية', items: [
     { href: '/plans', label: 'الباقات', icon: 'Tags', roles: ALL },

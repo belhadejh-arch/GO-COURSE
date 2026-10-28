@@ -113,6 +113,637 @@ export interface SchoolRecordInput {
   data?: SchoolRecordInputData;
 }
 
+export type RegistrationPricingOptionCountry = typeof RegistrationPricingOptionCountry[keyof typeof RegistrationPricingOptionCountry];
+
+
+export const RegistrationPricingOptionCountry = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export type RegistrationPricingOptionCourseType = typeof RegistrationPricingOptionCourseType[keyof typeof RegistrationPricingOptionCourseType];
+
+
+export const RegistrationPricingOptionCourseType = {
+  level: 'level',
+  conversation: 'conversation',
+  exam: 'exam',
+} as const;
+
+export type RegistrationPricingOptionStudyMode = typeof RegistrationPricingOptionStudyMode[keyof typeof RegistrationPricingOptionStudyMode] | null;
+
+
+export const RegistrationPricingOptionStudyMode = {
+  group: 'group',
+  individual: 'individual',
+} as const;
+
+export type RegistrationPricingOptionStudySystem = typeof RegistrationPricingOptionStudySystem[keyof typeof RegistrationPricingOptionStudySystem] | null;
+
+
+export const RegistrationPricingOptionStudySystem = {
+  regular: 'regular',
+  intensive: 'intensive',
+} as const;
+
+export type RegistrationPricingOptionUnit = typeof RegistrationPricingOptionUnit[keyof typeof RegistrationPricingOptionUnit];
+
+
+export const RegistrationPricingOptionUnit = {
+  monthly: 'monthly',
+  level: 'level',
+  package: 'package',
+} as const;
+
+export interface RegistrationPricingOption {
+  id: number;
+  country: RegistrationPricingOptionCountry;
+  languageId: number | null;
+  courseType: RegistrationPricingOptionCourseType;
+  studyMode: RegistrationPricingOptionStudyMode;
+  studySystem: RegistrationPricingOptionStudySystem;
+  weeklySessions: number | null;
+  totalSessions: number | null;
+  amount: number | null;
+  currency: string;
+  unit: RegistrationPricingOptionUnit;
+  duration: string | null;
+  lessonHours: number | null;
+  needsReview: boolean;
+  active: boolean;
+}
+
+export type RegistrationPaymentMethodCode = typeof RegistrationPaymentMethodCode[keyof typeof RegistrationPaymentMethodCode];
+
+
+export const RegistrationPaymentMethodCode = {
+  ccp: 'ccp',
+  baridi_mob: 'baridi_mob',
+  edahabia_cib: 'edahabia_cib',
+  international_manual: 'international_manual',
+  other: 'other',
+} as const;
+
+export type RegistrationPaymentMethodCountriesItem = typeof RegistrationPaymentMethodCountriesItem[keyof typeof RegistrationPaymentMethodCountriesItem];
+
+
+export const RegistrationPaymentMethodCountriesItem = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export interface RegistrationPaymentMethod {
+  code: RegistrationPaymentMethodCode;
+  label: string;
+  countries: RegistrationPaymentMethodCountriesItem[];
+  manualOnly: boolean;
+}
+
+export interface RegistrationOptions {
+  pricingOptions: RegistrationPricingOption[];
+  paymentMethods: RegistrationPaymentMethod[];
+}
+
+export type RegistrationQuoteInputCountry = typeof RegistrationQuoteInputCountry[keyof typeof RegistrationQuoteInputCountry];
+
+
+export const RegistrationQuoteInputCountry = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export type RegistrationQuoteInputCourseType = typeof RegistrationQuoteInputCourseType[keyof typeof RegistrationQuoteInputCourseType];
+
+
+export const RegistrationQuoteInputCourseType = {
+  level: 'level',
+  conversation: 'conversation',
+  exam: 'exam',
+} as const;
+
+export type RegistrationQuoteInputStudyMode = typeof RegistrationQuoteInputStudyMode[keyof typeof RegistrationQuoteInputStudyMode];
+
+
+export const RegistrationQuoteInputStudyMode = {
+  group: 'group',
+  individual: 'individual',
+} as const;
+
+export type RegistrationQuoteInputStudySystem = typeof RegistrationQuoteInputStudySystem[keyof typeof RegistrationQuoteInputStudySystem];
+
+
+export const RegistrationQuoteInputStudySystem = {
+  regular: 'regular',
+  intensive: 'intensive',
+} as const;
+
+export interface RegistrationQuoteInput {
+  country: RegistrationQuoteInputCountry;
+  /** @minimum 1 */
+  languageId: number;
+  courseType: RegistrationQuoteInputCourseType;
+  studyMode?: RegistrationQuoteInputStudyMode;
+  studySystem?: RegistrationQuoteInputStudySystem;
+  /**
+     * @minimum 1
+     * @maximum 7
+     */
+  weeklySessions?: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  totalSessions?: number;
+}
+
+export type RegistrationQuoteCountry = typeof RegistrationQuoteCountry[keyof typeof RegistrationQuoteCountry];
+
+
+export const RegistrationQuoteCountry = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export type RegistrationQuoteCourseType = typeof RegistrationQuoteCourseType[keyof typeof RegistrationQuoteCourseType];
+
+
+export const RegistrationQuoteCourseType = {
+  level: 'level',
+  conversation: 'conversation',
+  exam: 'exam',
+} as const;
+
+export type RegistrationQuoteStudyMode = typeof RegistrationQuoteStudyMode[keyof typeof RegistrationQuoteStudyMode] | null;
+
+
+export const RegistrationQuoteStudyMode = {
+  group: 'group',
+  individual: 'individual',
+} as const;
+
+export type RegistrationQuoteStudySystem = typeof RegistrationQuoteStudySystem[keyof typeof RegistrationQuoteStudySystem] | null;
+
+
+export const RegistrationQuoteStudySystem = {
+  regular: 'regular',
+  intensive: 'intensive',
+} as const;
+
+export type RegistrationQuoteUnit = typeof RegistrationQuoteUnit[keyof typeof RegistrationQuoteUnit];
+
+
+export const RegistrationQuoteUnit = {
+  monthly: 'monthly',
+  level: 'level',
+  package: 'package',
+  unknown: 'unknown',
+} as const;
+
+export type RegistrationQuoteStatus = typeof RegistrationQuoteStatus[keyof typeof RegistrationQuoteStatus];
+
+
+export const RegistrationQuoteStatus = {
+  approved: 'approved',
+  needs_review: 'needs_review',
+  admin_approved: 'admin_approved',
+} as const;
+
+export interface RegistrationQuote {
+  languageId: number;
+  languageTitle: string;
+  country: RegistrationQuoteCountry;
+  courseType: RegistrationQuoteCourseType;
+  studyMode: RegistrationQuoteStudyMode;
+  studySystem: RegistrationQuoteStudySystem;
+  weeklySessions: number | null;
+  totalSessions: number | null;
+  duration: string | null;
+  amount: number | null;
+  currency: string;
+  unit: RegistrationQuoteUnit;
+  status: RegistrationQuoteStatus;
+  sourceVersion: string;
+  message: string;
+}
+
+export type RegistrationRequestInputCountry = typeof RegistrationRequestInputCountry[keyof typeof RegistrationRequestInputCountry];
+
+
+export const RegistrationRequestInputCountry = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export type RegistrationRequestInputCourseType = typeof RegistrationRequestInputCourseType[keyof typeof RegistrationRequestInputCourseType];
+
+
+export const RegistrationRequestInputCourseType = {
+  level: 'level',
+  conversation: 'conversation',
+  exam: 'exam',
+} as const;
+
+export type RegistrationRequestInputLevelAssessment = typeof RegistrationRequestInputLevelAssessment[keyof typeof RegistrationRequestInputLevelAssessment];
+
+
+export const RegistrationRequestInputLevelAssessment = {
+  beginner: 'beginner',
+  placement_test: 'placement_test',
+  known: 'known',
+} as const;
+
+export type RegistrationRequestInputCurrentLevel = typeof RegistrationRequestInputCurrentLevel[keyof typeof RegistrationRequestInputCurrentLevel];
+
+
+export const RegistrationRequestInputCurrentLevel = {
+  A1: 'A1',
+  A2: 'A2',
+  B1: 'B1',
+  B2: 'B2',
+  C1: 'C1',
+  C2: 'C2',
+} as const;
+
+export type RegistrationRequestInputTargetLevel = typeof RegistrationRequestInputTargetLevel[keyof typeof RegistrationRequestInputTargetLevel];
+
+
+export const RegistrationRequestInputTargetLevel = {
+  A1: 'A1',
+  A2: 'A2',
+  B1: 'B1',
+  B2: 'B2',
+  C1: 'C1',
+  C2: 'C2',
+} as const;
+
+export type RegistrationRequestInputStudyMode = typeof RegistrationRequestInputStudyMode[keyof typeof RegistrationRequestInputStudyMode];
+
+
+export const RegistrationRequestInputStudyMode = {
+  group: 'group',
+  individual: 'individual',
+} as const;
+
+export type RegistrationRequestInputStudySystem = typeof RegistrationRequestInputStudySystem[keyof typeof RegistrationRequestInputStudySystem];
+
+
+export const RegistrationRequestInputStudySystem = {
+  regular: 'regular',
+  intensive: 'intensive',
+} as const;
+
+export type RegistrationRequestInputPaymentMethod = typeof RegistrationRequestInputPaymentMethod[keyof typeof RegistrationRequestInputPaymentMethod];
+
+
+export const RegistrationRequestInputPaymentMethod = {
+  ccp: 'ccp',
+  baridi_mob: 'baridi_mob',
+  edahabia_cib: 'edahabia_cib',
+  international_manual: 'international_manual',
+  other: 'other',
+} as const;
+
+export interface RegistrationRequestInput {
+  /**
+     * @minLength 36
+     * @maxLength 36
+     */
+  idempotencyKey: string;
+  /**
+     * @minLength 2
+     * @maxLength 160
+     */
+  fullName: string;
+  /**
+     * @minLength 7
+     * @maxLength 32
+     */
+  phone: string;
+  /** @maxLength 254 */
+  email: string;
+  country: RegistrationRequestInputCountry;
+  /** @maxLength 3000 */
+  goals?: string;
+  /** @minimum 1 */
+  languageId: number;
+  courseType: RegistrationRequestInputCourseType;
+  levelAssessment?: RegistrationRequestInputLevelAssessment;
+  currentLevel?: RegistrationRequestInputCurrentLevel;
+  targetLevel?: RegistrationRequestInputTargetLevel;
+  studyMode?: RegistrationRequestInputStudyMode;
+  studySystem?: RegistrationRequestInputStudySystem;
+  /**
+     * @minimum 1
+     * @maximum 7
+     */
+  weeklySessions?: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  totalSessions?: number;
+  /** @maxLength 100 */
+  examName?: string;
+  /** @maxLength 80 */
+  targetScore?: string;
+  examDate?: string;
+  /** @maxLength 500 */
+  schedulePreferences?: string;
+  paymentMethod: RegistrationRequestInputPaymentMethod;
+  /** @maxLength 120 */
+  paymentMethodOther?: string;
+}
+
+export type RegistrationReceiptStatus = typeof RegistrationReceiptStatus[keyof typeof RegistrationReceiptStatus];
+
+
+export const RegistrationReceiptStatus = {
+  pending_review: 'pending_review',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  needs_info: 'needs_info',
+} as const;
+
+export type RegistrationReceiptPaymentStatus = typeof RegistrationReceiptPaymentStatus[keyof typeof RegistrationReceiptPaymentStatus];
+
+
+export const RegistrationReceiptPaymentStatus = {
+  awaiting_verification: 'awaiting_verification',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export interface RegistrationReceipt {
+  requestNo: string;
+  status: RegistrationReceiptStatus;
+  paymentStatus: RegistrationReceiptPaymentStatus;
+  quote: RegistrationQuote;
+  createdAt: string;
+}
+
+export type RegistrationAdminRequestCountry = typeof RegistrationAdminRequestCountry[keyof typeof RegistrationAdminRequestCountry];
+
+
+export const RegistrationAdminRequestCountry = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export type RegistrationAdminRequestCourseType = typeof RegistrationAdminRequestCourseType[keyof typeof RegistrationAdminRequestCourseType];
+
+
+export const RegistrationAdminRequestCourseType = {
+  level: 'level',
+  conversation: 'conversation',
+  exam: 'exam',
+} as const;
+
+export type RegistrationAdminRequestLevelAssessment = typeof RegistrationAdminRequestLevelAssessment[keyof typeof RegistrationAdminRequestLevelAssessment] | null;
+
+
+export const RegistrationAdminRequestLevelAssessment = {
+  beginner: 'beginner',
+  placement_test: 'placement_test',
+  known: 'known',
+} as const;
+
+export type RegistrationAdminRequestStudyMode = typeof RegistrationAdminRequestStudyMode[keyof typeof RegistrationAdminRequestStudyMode] | null;
+
+
+export const RegistrationAdminRequestStudyMode = {
+  group: 'group',
+  individual: 'individual',
+} as const;
+
+export type RegistrationAdminRequestStudySystem = typeof RegistrationAdminRequestStudySystem[keyof typeof RegistrationAdminRequestStudySystem] | null;
+
+
+export const RegistrationAdminRequestStudySystem = {
+  regular: 'regular',
+  intensive: 'intensive',
+} as const;
+
+export type RegistrationAdminRequestPaymentMethod = typeof RegistrationAdminRequestPaymentMethod[keyof typeof RegistrationAdminRequestPaymentMethod];
+
+
+export const RegistrationAdminRequestPaymentMethod = {
+  ccp: 'ccp',
+  baridi_mob: 'baridi_mob',
+  edahabia_cib: 'edahabia_cib',
+  international_manual: 'international_manual',
+  other: 'other',
+} as const;
+
+export type RegistrationAdminRequestPaymentStatus = typeof RegistrationAdminRequestPaymentStatus[keyof typeof RegistrationAdminRequestPaymentStatus];
+
+
+export const RegistrationAdminRequestPaymentStatus = {
+  awaiting_verification: 'awaiting_verification',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export type RegistrationAdminRequestStatus = typeof RegistrationAdminRequestStatus[keyof typeof RegistrationAdminRequestStatus];
+
+
+export const RegistrationAdminRequestStatus = {
+  pending_review: 'pending_review',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  needs_info: 'needs_info',
+} as const;
+
+export interface RegistrationAdminRequest {
+  id: number;
+  requestNo: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  country: RegistrationAdminRequestCountry;
+  goals?: string;
+  languageId: number;
+  languageTitle: string;
+  courseType: RegistrationAdminRequestCourseType;
+  levelAssessment?: RegistrationAdminRequestLevelAssessment;
+  currentLevel?: string | null;
+  targetLevel?: string | null;
+  studyMode?: RegistrationAdminRequestStudyMode;
+  studySystem?: RegistrationAdminRequestStudySystem;
+  weeklySessions?: number | null;
+  totalSessions?: number | null;
+  duration?: string | null;
+  examName?: string | null;
+  targetScore?: string | null;
+  examDate?: string | null;
+  schedulePreferences?: string | null;
+  paymentMethod: RegistrationAdminRequestPaymentMethod;
+  paymentMethodOther?: string | null;
+  paymentStatus: RegistrationAdminRequestPaymentStatus;
+  status: RegistrationAdminRequestStatus;
+  quote: RegistrationQuote;
+  adminNote?: string;
+  studentProfileId?: number | null;
+  enrollmentId?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type RegistrationRequestUpdateInputStatus = typeof RegistrationRequestUpdateInputStatus[keyof typeof RegistrationRequestUpdateInputStatus];
+
+
+export const RegistrationRequestUpdateInputStatus = {
+  pending_review: 'pending_review',
+  accepted: 'accepted',
+  rejected: 'rejected',
+  needs_info: 'needs_info',
+} as const;
+
+export type RegistrationRequestUpdateInputPaymentStatus = typeof RegistrationRequestUpdateInputPaymentStatus[keyof typeof RegistrationRequestUpdateInputPaymentStatus];
+
+
+export const RegistrationRequestUpdateInputPaymentStatus = {
+  awaiting_verification: 'awaiting_verification',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+export type RegistrationRequestUpdateInputFinalUnit = typeof RegistrationRequestUpdateInputFinalUnit[keyof typeof RegistrationRequestUpdateInputFinalUnit];
+
+
+export const RegistrationRequestUpdateInputFinalUnit = {
+  monthly: 'monthly',
+  level: 'level',
+  package: 'package',
+} as const;
+
+export interface RegistrationRequestUpdateInput {
+  status?: RegistrationRequestUpdateInputStatus;
+  paymentStatus?: RegistrationRequestUpdateInputPaymentStatus;
+  finalAmount?: number | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  finalCurrency?: string;
+  finalUnit?: RegistrationRequestUpdateInputFinalUnit;
+  /** @maxLength 2000 */
+  adminNote?: string;
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  reason?: string;
+}
+
+export interface RegistrationConversionInput {
+  /** @minimum 1 */
+  courseId: number;
+  /** @minimum 1 */
+  groupId?: number;
+  startDate: string;
+}
+
+export interface RegistrationConversionReceipt {
+  requestNo: string;
+  studentProfileId: number;
+  enrollmentId: number;
+  courseTitle: string;
+}
+
+export type RegistrationPricingRuleCountry = typeof RegistrationPricingRuleCountry[keyof typeof RegistrationPricingRuleCountry];
+
+
+export const RegistrationPricingRuleCountry = {
+  algeria: 'algeria',
+  outside_algeria: 'outside_algeria',
+} as const;
+
+export type RegistrationPricingRuleCourseType = typeof RegistrationPricingRuleCourseType[keyof typeof RegistrationPricingRuleCourseType];
+
+
+export const RegistrationPricingRuleCourseType = {
+  level: 'level',
+  conversation: 'conversation',
+  exam: 'exam',
+} as const;
+
+export type RegistrationPricingRuleStudyMode = typeof RegistrationPricingRuleStudyMode[keyof typeof RegistrationPricingRuleStudyMode] | null;
+
+
+export const RegistrationPricingRuleStudyMode = {
+  group: 'group',
+  individual: 'individual',
+} as const;
+
+export type RegistrationPricingRuleStudySystem = typeof RegistrationPricingRuleStudySystem[keyof typeof RegistrationPricingRuleStudySystem] | null;
+
+
+export const RegistrationPricingRuleStudySystem = {
+  regular: 'regular',
+  intensive: 'intensive',
+} as const;
+
+export type RegistrationPricingRuleUnit = typeof RegistrationPricingRuleUnit[keyof typeof RegistrationPricingRuleUnit];
+
+
+export const RegistrationPricingRuleUnit = {
+  monthly: 'monthly',
+  level: 'level',
+  package: 'package',
+} as const;
+
+export interface RegistrationPricingRule {
+  id: number;
+  country: RegistrationPricingRuleCountry;
+  languageId: number | null;
+  courseType: RegistrationPricingRuleCourseType;
+  studyMode: RegistrationPricingRuleStudyMode;
+  studySystem: RegistrationPricingRuleStudySystem;
+  weeklySessions: number | null;
+  totalSessions: number | null;
+  amount: number | null;
+  currency: string;
+  unit: RegistrationPricingRuleUnit;
+  duration: string | null;
+  lessonHours: number | null;
+  needsReview: boolean;
+  reviewNote: string;
+  sourceVersion: string;
+  sourcePage: number;
+  active: boolean;
+  updatedAt: string;
+}
+
+export type RegistrationPricingRuleUpdateInputUnit = typeof RegistrationPricingRuleUpdateInputUnit[keyof typeof RegistrationPricingRuleUpdateInputUnit];
+
+
+export const RegistrationPricingRuleUpdateInputUnit = {
+  monthly: 'monthly',
+  level: 'level',
+  package: 'package',
+} as const;
+
+export interface RegistrationPricingRuleUpdateInput {
+  amount: number | null;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currency: string;
+  unit: RegistrationPricingRuleUpdateInputUnit;
+  duration: string | null;
+  lessonHours: number | null;
+  needsReview: boolean;
+  /** @maxLength 1000 */
+  reviewNote: string;
+  active: boolean;
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
 export interface UploadInput {
   name: string;
   /**

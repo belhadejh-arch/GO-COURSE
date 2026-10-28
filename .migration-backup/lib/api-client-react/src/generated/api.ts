@@ -42,6 +42,17 @@ import type {
   HealthStatus,
   ListSchoolChatsParams,
   LogoutSchoolAccount200,
+  RegistrationAdminRequest,
+  RegistrationConversionInput,
+  RegistrationConversionReceipt,
+  RegistrationOptions,
+  RegistrationPricingRule,
+  RegistrationPricingRuleUpdateInput,
+  RegistrationQuote,
+  RegistrationQuoteInput,
+  RegistrationReceipt,
+  RegistrationRequestInput,
+  RegistrationRequestUpdateInput,
   ResetSchoolPassword200,
   SchoolAccount,
   SchoolIdentity,
@@ -1133,6 +1144,632 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getArchiveSchoolRecordMutationOptions(options));
+    }
+
+export const getGetRegistrationOptionsUrl = () => {
+
+
+
+
+  return `/api/registration/options`
+}
+
+export const getRegistrationOptions = async ( options?: Parameters<typeof customFetch>[1]): Promise<RegistrationOptions> => {
+
+  return customFetch<RegistrationOptions>(getGetRegistrationOptionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRegistrationOptionsQueryKey = () => {
+    return [
+    `/api/registration/options`
+    ] as const;
+    }
+
+
+export const getGetRegistrationOptionsQueryOptions = <TData = Awaited<ReturnType<typeof getRegistrationOptions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRegistrationOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRegistrationOptionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRegistrationOptions>>> = ({ signal }) => getRegistrationOptions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRegistrationOptions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRegistrationOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof getRegistrationOptions>>>
+export type GetRegistrationOptionsQueryError = ErrorType<unknown>
+
+
+
+export function useGetRegistrationOptions<TData = Awaited<ReturnType<typeof getRegistrationOptions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRegistrationOptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRegistrationOptionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCalculateRegistrationQuoteUrl = () => {
+
+
+
+
+  return `/api/registration/quote`
+}
+
+export const calculateRegistrationQuote = async (registrationQuoteInput: RegistrationQuoteInput, options?: Parameters<typeof customFetch>[1]): Promise<RegistrationQuote> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RegistrationQuote>(getCalculateRegistrationQuoteUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registrationQuoteInput)
+  }
+);}
+
+
+
+
+
+export const getCalculateRegistrationQuoteMutationKey = () => ['calculateRegistrationQuote'] as const;
+
+export const getCalculateRegistrationQuoteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateRegistrationQuote>>, TError,CalculateRegistrationQuoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof calculateRegistrationQuote>>, TError,CalculateRegistrationQuoteMutationVariables, TContext> => {
+
+const mutationKey = getCalculateRegistrationQuoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateRegistrationQuote>>, CalculateRegistrationQuoteMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  calculateRegistrationQuote(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateRegistrationQuoteMutationResult = NonNullable<Awaited<ReturnType<typeof calculateRegistrationQuote>>>
+    export type CalculateRegistrationQuoteMutationBody = BodyType<RegistrationQuoteInput>
+    export type CalculateRegistrationQuoteMutationError = ErrorType<unknown>
+    export type CalculateRegistrationQuoteMutationVariables = {data: BodyType<RegistrationQuoteInput>}
+
+    export const useCalculateRegistrationQuote = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateRegistrationQuote>>, TError,CalculateRegistrationQuoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof calculateRegistrationQuote>>,
+        TError,
+        CalculateRegistrationQuoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCalculateRegistrationQuoteMutationOptions(options));
+    }
+
+export const getCreateRegistrationRequestUrl = () => {
+
+
+
+
+  return `/api/registration/requests`
+}
+
+export const createRegistrationRequest = async (registrationRequestInput: RegistrationRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<RegistrationReceipt> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RegistrationReceipt>(getCreateRegistrationRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registrationRequestInput)
+  }
+);}
+
+
+
+
+
+export const getCreateRegistrationRequestMutationKey = () => ['createRegistrationRequest'] as const;
+
+export const getCreateRegistrationRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRegistrationRequest>>, TError,CreateRegistrationRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRegistrationRequest>>, TError,CreateRegistrationRequestMutationVariables, TContext> => {
+
+const mutationKey = getCreateRegistrationRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRegistrationRequest>>, CreateRegistrationRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRegistrationRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRegistrationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createRegistrationRequest>>>
+    export type CreateRegistrationRequestMutationBody = BodyType<RegistrationRequestInput>
+    export type CreateRegistrationRequestMutationError = ErrorType<unknown>
+    export type CreateRegistrationRequestMutationVariables = {data: BodyType<RegistrationRequestInput>}
+
+    export const useCreateRegistrationRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRegistrationRequest>>, TError,CreateRegistrationRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createRegistrationRequest>>,
+        TError,
+        CreateRegistrationRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRegistrationRequestMutationOptions(options));
+    }
+
+export const getListRegistrationRequestsUrl = () => {
+
+
+
+
+  return `/api/admin/registration-requests`
+}
+
+export const listRegistrationRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<RegistrationAdminRequest[]> => {
+
+  return customFetch<RegistrationAdminRequest[]>(getListRegistrationRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRegistrationRequestsQueryKey = () => {
+    return [
+    `/api/admin/registration-requests`
+    ] as const;
+    }
+
+
+export const getListRegistrationRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listRegistrationRequests>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRegistrationRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRegistrationRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRegistrationRequests>>> = ({ signal }) => listRegistrationRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRegistrationRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRegistrationRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listRegistrationRequests>>>
+export type ListRegistrationRequestsQueryError = ErrorType<unknown>
+
+
+
+export function useListRegistrationRequests<TData = Awaited<ReturnType<typeof listRegistrationRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRegistrationRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRegistrationRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateRegistrationRequestUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/registration-requests/${id}`
+}
+
+export const updateRegistrationRequest = async (id: number,
+    registrationRequestUpdateInput: RegistrationRequestUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<RegistrationAdminRequest> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RegistrationAdminRequest>(getUpdateRegistrationRequestUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registrationRequestUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateRegistrationRequestMutationKey = () => ['updateRegistrationRequest'] as const;
+
+export const getUpdateRegistrationRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRegistrationRequest>>, TError,UpdateRegistrationRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRegistrationRequest>>, TError,UpdateRegistrationRequestMutationVariables, TContext> => {
+
+const mutationKey = getUpdateRegistrationRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRegistrationRequest>>, UpdateRegistrationRequestMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateRegistrationRequest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRegistrationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof updateRegistrationRequest>>>
+    export type UpdateRegistrationRequestMutationBody = BodyType<RegistrationRequestUpdateInput>
+    export type UpdateRegistrationRequestMutationError = ErrorType<unknown>
+    export type UpdateRegistrationRequestMutationVariables = {id: number;data: BodyType<RegistrationRequestUpdateInput>}
+
+    export const useUpdateRegistrationRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRegistrationRequest>>, TError,UpdateRegistrationRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateRegistrationRequest>>,
+        TError,
+        UpdateRegistrationRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateRegistrationRequestMutationOptions(options));
+    }
+
+export const getConvertRegistrationRequestUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/registration-requests/${id}/convert`
+}
+
+export const convertRegistrationRequest = async (id: number,
+    registrationConversionInput: RegistrationConversionInput, options?: Parameters<typeof customFetch>[1]): Promise<RegistrationConversionReceipt> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RegistrationConversionReceipt>(getConvertRegistrationRequestUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registrationConversionInput)
+  }
+);}
+
+
+
+
+
+export const getConvertRegistrationRequestMutationKey = () => ['convertRegistrationRequest'] as const;
+
+export const getConvertRegistrationRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof convertRegistrationRequest>>, TError,ConvertRegistrationRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof convertRegistrationRequest>>, TError,ConvertRegistrationRequestMutationVariables, TContext> => {
+
+const mutationKey = getConvertRegistrationRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof convertRegistrationRequest>>, ConvertRegistrationRequestMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  convertRegistrationRequest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConvertRegistrationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof convertRegistrationRequest>>>
+    export type ConvertRegistrationRequestMutationBody = BodyType<RegistrationConversionInput>
+    export type ConvertRegistrationRequestMutationError = ErrorType<unknown>
+    export type ConvertRegistrationRequestMutationVariables = {id: number;data: BodyType<RegistrationConversionInput>}
+
+    export const useConvertRegistrationRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof convertRegistrationRequest>>, TError,ConvertRegistrationRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof convertRegistrationRequest>>,
+        TError,
+        ConvertRegistrationRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConvertRegistrationRequestMutationOptions(options));
+    }
+
+export const getListRegistrationPricingRulesUrl = () => {
+
+
+
+
+  return `/api/admin/registration-pricing`
+}
+
+export const listRegistrationPricingRules = async ( options?: Parameters<typeof customFetch>[1]): Promise<RegistrationPricingRule[]> => {
+
+  return customFetch<RegistrationPricingRule[]>(getListRegistrationPricingRulesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRegistrationPricingRulesQueryKey = () => {
+    return [
+    `/api/admin/registration-pricing`
+    ] as const;
+    }
+
+
+export const getListRegistrationPricingRulesQueryOptions = <TData = Awaited<ReturnType<typeof listRegistrationPricingRules>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRegistrationPricingRules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRegistrationPricingRulesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRegistrationPricingRules>>> = ({ signal }) => listRegistrationPricingRules({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRegistrationPricingRules>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRegistrationPricingRulesQueryResult = NonNullable<Awaited<ReturnType<typeof listRegistrationPricingRules>>>
+export type ListRegistrationPricingRulesQueryError = ErrorType<unknown>
+
+
+
+export function useListRegistrationPricingRules<TData = Awaited<ReturnType<typeof listRegistrationPricingRules>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRegistrationPricingRules>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRegistrationPricingRulesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateRegistrationPricingRuleUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/registration-pricing/${id}`
+}
+
+export const updateRegistrationPricingRule = async (id: number,
+    registrationPricingRuleUpdateInput: RegistrationPricingRuleUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<RegistrationPricingRule> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RegistrationPricingRule>(getUpdateRegistrationPricingRuleUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registrationPricingRuleUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateRegistrationPricingRuleMutationKey = () => ['updateRegistrationPricingRule'] as const;
+
+export const getUpdateRegistrationPricingRuleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRegistrationPricingRule>>, TError,UpdateRegistrationPricingRuleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRegistrationPricingRule>>, TError,UpdateRegistrationPricingRuleMutationVariables, TContext> => {
+
+const mutationKey = getUpdateRegistrationPricingRuleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRegistrationPricingRule>>, UpdateRegistrationPricingRuleMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateRegistrationPricingRule(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRegistrationPricingRuleMutationResult = NonNullable<Awaited<ReturnType<typeof updateRegistrationPricingRule>>>
+    export type UpdateRegistrationPricingRuleMutationBody = BodyType<RegistrationPricingRuleUpdateInput>
+    export type UpdateRegistrationPricingRuleMutationError = ErrorType<unknown>
+    export type UpdateRegistrationPricingRuleMutationVariables = {id: number;data: BodyType<RegistrationPricingRuleUpdateInput>}
+
+    export const useUpdateRegistrationPricingRule = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRegistrationPricingRule>>, TError,UpdateRegistrationPricingRuleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateRegistrationPricingRule>>,
+        TError,
+        UpdateRegistrationPricingRuleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateRegistrationPricingRuleMutationOptions(options));
     }
 
 export const getReadSchoolNotificationsUrl = () => {

@@ -19,3 +19,4 @@
 
 export * from "./school";
 export * from "./chat";
+export * from "./registration";

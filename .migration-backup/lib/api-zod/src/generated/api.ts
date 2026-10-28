@@ -233,6 +233,388 @@ export const ArchiveSchoolRecordResponse = zod.object({
 })
 
 
+export const GetRegistrationOptionsResponse = zod.object({
+  "pricingOptions": zod.array(zod.object({
+  "id": zod.number().int(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "languageId": zod.union([zod.number().int(),zod.null()]),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package']),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "lessonHours": zod.union([zod.number(),zod.null()]),
+  "needsReview": zod.boolean(),
+  "active": zod.boolean()
+})),
+  "paymentMethods": zod.array(zod.object({
+  "code": zod.enum(['ccp', 'baridi_mob', 'edahabia_cib', 'international_manual', 'other']),
+  "label": zod.string(),
+  "countries": zod.array(zod.enum(['algeria', 'outside_algeria'])),
+  "manualOnly": zod.boolean()
+}))
+})
+
+
+
+export const calculateRegistrationQuoteBodyWeeklySessionsMax = 7;
+
+export const calculateRegistrationQuoteBodyTotalSessionsMax = 100;
+
+
+
+export const CalculateRegistrationQuoteBody = zod.object({
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "languageId": zod.number().int().min(1),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.enum(['group', 'individual']).optional(),
+  "studySystem": zod.enum(['regular', 'intensive']).optional(),
+  "weeklySessions": zod.number().int().min(1).max(calculateRegistrationQuoteBodyWeeklySessionsMax).optional(),
+  "totalSessions": zod.number().int().min(1).max(calculateRegistrationQuoteBodyTotalSessionsMax).optional()
+})
+
+export const CalculateRegistrationQuoteResponse = zod.object({
+  "languageId": zod.number().int(),
+  "languageTitle": zod.string(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package', 'unknown']),
+  "status": zod.enum(['approved', 'needs_review', 'admin_approved']),
+  "sourceVersion": zod.string(),
+  "message": zod.string()
+})
+
+
+export const createRegistrationRequestBodyIdempotencyKeyMin = 36;
+export const createRegistrationRequestBodyIdempotencyKeyMax = 36;
+
+export const createRegistrationRequestBodyFullNameMin = 2;
+export const createRegistrationRequestBodyFullNameMax = 160;
+
+export const createRegistrationRequestBodyPhoneMin = 7;
+export const createRegistrationRequestBodyPhoneMax = 32;
+
+export const createRegistrationRequestBodyEmailMax = 254;
+
+export const createRegistrationRequestBodyGoalsMax = 3000;
+
+
+export const createRegistrationRequestBodyWeeklySessionsMax = 7;
+
+export const createRegistrationRequestBodyTotalSessionsMax = 100;
+
+export const createRegistrationRequestBodyExamNameMax = 100;
+
+export const createRegistrationRequestBodyTargetScoreMax = 80;
+
+export const createRegistrationRequestBodySchedulePreferencesMax = 500;
+
+export const createRegistrationRequestBodyPaymentMethodOtherMax = 120;
+
+
+
+export const CreateRegistrationRequestBody = zod.object({
+  "idempotencyKey": zod.string().min(createRegistrationRequestBodyIdempotencyKeyMin).max(createRegistrationRequestBodyIdempotencyKeyMax),
+  "fullName": zod.string().min(createRegistrationRequestBodyFullNameMin).max(createRegistrationRequestBodyFullNameMax),
+  "phone": zod.string().min(createRegistrationRequestBodyPhoneMin).max(createRegistrationRequestBodyPhoneMax),
+  "email": zod.string().email().max(createRegistrationRequestBodyEmailMax),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "goals": zod.string().max(createRegistrationRequestBodyGoalsMax).optional(),
+  "languageId": zod.number().int().min(1),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "levelAssessment": zod.enum(['beginner', 'placement_test', 'known']).optional(),
+  "currentLevel": zod.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
+  "targetLevel": zod.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
+  "studyMode": zod.enum(['group', 'individual']).optional(),
+  "studySystem": zod.enum(['regular', 'intensive']).optional(),
+  "weeklySessions": zod.number().int().min(1).max(createRegistrationRequestBodyWeeklySessionsMax).optional(),
+  "totalSessions": zod.number().int().min(1).max(createRegistrationRequestBodyTotalSessionsMax).optional(),
+  "examName": zod.string().max(createRegistrationRequestBodyExamNameMax).optional(),
+  "targetScore": zod.string().max(createRegistrationRequestBodyTargetScoreMax).optional(),
+  "examDate": zod.coerce.date().optional(),
+  "schedulePreferences": zod.string().max(createRegistrationRequestBodySchedulePreferencesMax).optional(),
+  "paymentMethod": zod.enum(['ccp', 'baridi_mob', 'edahabia_cib', 'international_manual', 'other']),
+  "paymentMethodOther": zod.string().max(createRegistrationRequestBodyPaymentMethodOtherMax).optional()
+})
+
+export const CreateRegistrationRequestResponse = zod.object({
+  "requestNo": zod.string(),
+  "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']),
+  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']),
+  "quote": zod.object({
+  "languageId": zod.number().int(),
+  "languageTitle": zod.string(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package', 'unknown']),
+  "status": zod.enum(['approved', 'needs_review', 'admin_approved']),
+  "sourceVersion": zod.string(),
+  "message": zod.string()
+}),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const ListRegistrationRequestsResponseItem = zod.object({
+  "id": zod.number().int(),
+  "requestNo": zod.string(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "goals": zod.string().optional(),
+  "languageId": zod.number().int(),
+  "languageTitle": zod.string(),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "levelAssessment": zod.union([zod.enum(['beginner', 'placement_test', 'known']),zod.null()]).optional(),
+  "currentLevel": zod.union([zod.string(),zod.null()]).optional(),
+  "targetLevel": zod.union([zod.string(),zod.null()]).optional(),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]).optional(),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]).optional(),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]).optional(),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]).optional(),
+  "duration": zod.union([zod.string(),zod.null()]).optional(),
+  "examName": zod.union([zod.string(),zod.null()]).optional(),
+  "targetScore": zod.union([zod.string(),zod.null()]).optional(),
+  "examDate": zod.union([zod.string(),zod.null()]).optional(),
+  "schedulePreferences": zod.union([zod.string(),zod.null()]).optional(),
+  "paymentMethod": zod.enum(['ccp', 'baridi_mob', 'edahabia_cib', 'international_manual', 'other']),
+  "paymentMethodOther": zod.union([zod.string(),zod.null()]).optional(),
+  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']),
+  "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']),
+  "quote": zod.object({
+  "languageId": zod.number().int(),
+  "languageTitle": zod.string(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package', 'unknown']),
+  "status": zod.enum(['approved', 'needs_review', 'admin_approved']),
+  "sourceVersion": zod.string(),
+  "message": zod.string()
+}),
+  "adminNote": zod.string().optional(),
+  "studentProfileId": zod.union([zod.number().int(),zod.null()]).optional(),
+  "enrollmentId": zod.union([zod.number().int(),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListRegistrationRequestsResponse = zod.array(ListRegistrationRequestsResponseItem)
+
+
+
+
+
+export const UpdateRegistrationRequestParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const updateRegistrationRequestBodyFinalAmountOneMin = 0;
+
+export const updateRegistrationRequestBodyFinalCurrencyMin = 3;
+export const updateRegistrationRequestBodyFinalCurrencyMax = 3;
+
+export const updateRegistrationRequestBodyAdminNoteMax = 2000;
+
+export const updateRegistrationRequestBodyReasonMin = 3;
+export const updateRegistrationRequestBodyReasonMax = 1000;
+
+
+
+export const UpdateRegistrationRequestBody = zod.object({
+  "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']).optional(),
+  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']).optional(),
+  "finalAmount": zod.union([zod.number().min(updateRegistrationRequestBodyFinalAmountOneMin),zod.null()]).optional(),
+  "finalCurrency": zod.string().min(updateRegistrationRequestBodyFinalCurrencyMin).max(updateRegistrationRequestBodyFinalCurrencyMax).optional(),
+  "finalUnit": zod.enum(['monthly', 'level', 'package']).optional(),
+  "adminNote": zod.string().max(updateRegistrationRequestBodyAdminNoteMax).optional(),
+  "reason": zod.string().min(updateRegistrationRequestBodyReasonMin).max(updateRegistrationRequestBodyReasonMax).optional()
+})
+
+export const UpdateRegistrationRequestResponse = zod.object({
+  "id": zod.number().int(),
+  "requestNo": zod.string(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "goals": zod.string().optional(),
+  "languageId": zod.number().int(),
+  "languageTitle": zod.string(),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "levelAssessment": zod.union([zod.enum(['beginner', 'placement_test', 'known']),zod.null()]).optional(),
+  "currentLevel": zod.union([zod.string(),zod.null()]).optional(),
+  "targetLevel": zod.union([zod.string(),zod.null()]).optional(),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]).optional(),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]).optional(),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]).optional(),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]).optional(),
+  "duration": zod.union([zod.string(),zod.null()]).optional(),
+  "examName": zod.union([zod.string(),zod.null()]).optional(),
+  "targetScore": zod.union([zod.string(),zod.null()]).optional(),
+  "examDate": zod.union([zod.string(),zod.null()]).optional(),
+  "schedulePreferences": zod.union([zod.string(),zod.null()]).optional(),
+  "paymentMethod": zod.enum(['ccp', 'baridi_mob', 'edahabia_cib', 'international_manual', 'other']),
+  "paymentMethodOther": zod.union([zod.string(),zod.null()]).optional(),
+  "paymentStatus": zod.enum(['awaiting_verification', 'verified', 'rejected']),
+  "status": zod.enum(['pending_review', 'accepted', 'rejected', 'needs_info']),
+  "quote": zod.object({
+  "languageId": zod.number().int(),
+  "languageTitle": zod.string(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package', 'unknown']),
+  "status": zod.enum(['approved', 'needs_review', 'admin_approved']),
+  "sourceVersion": zod.string(),
+  "message": zod.string()
+}),
+  "adminNote": zod.string().optional(),
+  "studentProfileId": zod.union([zod.number().int(),zod.null()]).optional(),
+  "enrollmentId": zod.union([zod.number().int(),zod.null()]).optional(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+
+
+
+export const ConvertRegistrationRequestParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+
+
+
+
+export const ConvertRegistrationRequestBody = zod.object({
+  "courseId": zod.number().int().min(1),
+  "groupId": zod.number().int().min(1).optional(),
+  "startDate": zod.coerce.date()
+})
+
+export const ConvertRegistrationRequestResponse = zod.object({
+  "requestNo": zod.string(),
+  "studentProfileId": zod.number().int(),
+  "enrollmentId": zod.number().int(),
+  "courseTitle": zod.string()
+})
+
+
+export const ListRegistrationPricingRulesResponseItem = zod.object({
+  "id": zod.number().int(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "languageId": zod.union([zod.number().int(),zod.null()]),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package']),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "lessonHours": zod.union([zod.number(),zod.null()]),
+  "needsReview": zod.boolean(),
+  "reviewNote": zod.string(),
+  "sourceVersion": zod.string(),
+  "sourcePage": zod.number().int(),
+  "active": zod.boolean(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListRegistrationPricingRulesResponse = zod.array(ListRegistrationPricingRulesResponseItem)
+
+
+
+
+
+export const UpdateRegistrationPricingRuleParams = zod.object({
+  "id": zod.coerce.number().int().min(1)
+})
+
+export const updateRegistrationPricingRuleBodyAmountOneMin = 0;
+
+export const updateRegistrationPricingRuleBodyCurrencyMin = 3;
+export const updateRegistrationPricingRuleBodyCurrencyMax = 3;
+
+export const updateRegistrationPricingRuleBodyDurationOneMax = 100;
+
+export const updateRegistrationPricingRuleBodyLessonHoursOneMin = 0.5;
+export const updateRegistrationPricingRuleBodyLessonHoursOneMax = 8;
+
+export const updateRegistrationPricingRuleBodyReviewNoteMax = 1000;
+
+export const updateRegistrationPricingRuleBodyReasonMin = 3;
+export const updateRegistrationPricingRuleBodyReasonMax = 1000;
+
+
+
+export const UpdateRegistrationPricingRuleBody = zod.object({
+  "amount": zod.union([zod.number().min(updateRegistrationPricingRuleBodyAmountOneMin),zod.null()]),
+  "currency": zod.string().min(updateRegistrationPricingRuleBodyCurrencyMin).max(updateRegistrationPricingRuleBodyCurrencyMax),
+  "unit": zod.enum(['monthly', 'level', 'package']),
+  "duration": zod.union([zod.string().max(updateRegistrationPricingRuleBodyDurationOneMax),zod.null()]),
+  "lessonHours": zod.union([zod.number().min(updateRegistrationPricingRuleBodyLessonHoursOneMin).max(updateRegistrationPricingRuleBodyLessonHoursOneMax),zod.null()]),
+  "needsReview": zod.boolean(),
+  "reviewNote": zod.string().max(updateRegistrationPricingRuleBodyReviewNoteMax),
+  "active": zod.boolean(),
+  "reason": zod.string().min(updateRegistrationPricingRuleBodyReasonMin).max(updateRegistrationPricingRuleBodyReasonMax)
+})
+
+export const UpdateRegistrationPricingRuleResponse = zod.object({
+  "id": zod.number().int(),
+  "country": zod.enum(['algeria', 'outside_algeria']),
+  "languageId": zod.union([zod.number().int(),zod.null()]),
+  "courseType": zod.enum(['level', 'conversation', 'exam']),
+  "studyMode": zod.union([zod.enum(['group', 'individual']),zod.null()]),
+  "studySystem": zod.union([zod.enum(['regular', 'intensive']),zod.null()]),
+  "weeklySessions": zod.union([zod.number().int(),zod.null()]),
+  "totalSessions": zod.union([zod.number().int(),zod.null()]),
+  "amount": zod.union([zod.number(),zod.null()]),
+  "currency": zod.string(),
+  "unit": zod.enum(['monthly', 'level', 'package']),
+  "duration": zod.union([zod.string(),zod.null()]),
+  "lessonHours": zod.union([zod.number(),zod.null()]),
+  "needsReview": zod.boolean(),
+  "reviewNote": zod.string(),
+  "sourceVersion": zod.string(),
+  "sourcePage": zod.number().int(),
+  "active": zod.boolean(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const ReadSchoolNotificationsResponse = zod.object({
   "status": zod.string()
 })

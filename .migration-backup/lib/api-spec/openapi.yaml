@@ -174,6 +174,121 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SchoolRecord" }
+  /registration/options:
+    get:
+      operationId: getRegistrationOptions
+      tags: [registration]
+      responses:
+        "200":
+          description: Public registration choices derived from the language catalog and approved price rules
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationOptions" }
+  /registration/quote:
+    post:
+      operationId: calculateRegistrationQuote
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationQuoteInput" }
+      responses:
+        "200":
+          description: Server-calculated quote, or explicit management review state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationQuote" }
+  /registration/requests:
+    post:
+      operationId: createRegistrationRequest
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationRequestInput" }
+      responses:
+        "201":
+          description: Registration request saved in PostgreSQL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationReceipt" }
+  /admin/registration-requests:
+    get:
+      operationId: listRegistrationRequests
+      tags: [registration]
+      responses:
+        "200":
+          description: Administrator-only registration request queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RegistrationAdminRequest" }
+  /admin/registration-requests/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    patch:
+      operationId: updateRegistrationRequest
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationRequestUpdateInput" }
+      responses:
+        "200":
+          description: Updated request with an audit entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationAdminRequest" }
+  /admin/registration-requests/{id}/convert:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    post:
+      operationId: convertRegistrationRequest
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationConversionInput" }
+      responses:
+        "201":
+          description: Created academic enrollment linked to the existing student account or profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationConversionReceipt" }
+  /admin/registration-pricing:
+    get:
+      operationId: listRegistrationPricingRules
+      tags: [registration]
+      responses:
+        "200":
+          description: Administrator-only price rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RegistrationPricingRule" }
+  /admin/registration-pricing/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    patch:
+      operationId: updateRegistrationPricingRule
+      tags: [registration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationPricingRuleUpdateInput" }
+      responses:
+        "200":
+          description: Updated price rule with an immutable audit entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RegistrationPricingRule" }
   /school/notifications/read:
     post:
       operationId: readSchoolNotifications
@@ -517,6 +632,329 @@ components:
           additionalProperties: true
         createdAt: { type: string }
         updatedAt: { type: string }
+    RegistrationOptions:
+      type: object
+      required: [pricingOptions, paymentMethods]
+      properties:
+        pricingOptions:
+          type: array
+          items: { $ref: "#/components/schemas/RegistrationPricingOption" }
+        paymentMethods:
+          type: array
+          items: { $ref: "#/components/schemas/RegistrationPaymentMethod" }
+    RegistrationPricingOption:
+      type: object
+      required: [id, country, languageId, courseType, studyMode, studySystem, weeklySessions, totalSessions, amount, currency, unit, duration, lessonHours, needsReview, active]
+      properties:
+        id: { type: integer }
+        country: { type: string, enum: [algeria, outside_algeria] }
+        languageId:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        courseType: { type: string, enum: [level, conversation, exam] }
+        studyMode:
+          anyOf:
+            - { type: string, enum: [group, individual] }
+            - { type: "null" }
+        studySystem:
+          anyOf:
+            - { type: string, enum: [regular, intensive] }
+            - { type: "null" }
+        weeklySessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        totalSessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        amount:
+          anyOf:
+            - { type: number }
+            - { type: "null" }
+        currency: { type: string }
+        unit: { type: string, enum: [monthly, level, package] }
+        duration:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        lessonHours:
+          anyOf:
+            - { type: number }
+            - { type: "null" }
+        needsReview: { type: boolean }
+        active: { type: boolean }
+    RegistrationPaymentMethod:
+      type: object
+      required: [code, label, countries, manualOnly]
+      properties:
+        code: { type: string, enum: [ccp, baridi_mob, edahabia_cib, international_manual, other] }
+        label: { type: string }
+        countries:
+          type: array
+          items: { type: string, enum: [algeria, outside_algeria] }
+        manualOnly: { type: boolean }
+    RegistrationQuoteInput:
+      type: object
+      required: [country, languageId, courseType]
+      properties:
+        country: { type: string, enum: [algeria, outside_algeria] }
+        languageId: { type: integer, minimum: 1 }
+        courseType: { type: string, enum: [level, conversation, exam] }
+        studyMode: { type: string, enum: [group, individual] }
+        studySystem: { type: string, enum: [regular, intensive] }
+        weeklySessions: { type: integer, minimum: 1, maximum: 7 }
+        totalSessions: { type: integer, minimum: 1, maximum: 100 }
+    RegistrationQuote:
+      type: object
+      required: [languageId, languageTitle, country, courseType, studyMode, studySystem, weeklySessions, totalSessions, duration, amount, currency, unit, status, sourceVersion, message]
+      properties:
+        languageId: { type: integer }
+        languageTitle: { type: string }
+        country: { type: string, enum: [algeria, outside_algeria] }
+        courseType: { type: string, enum: [level, conversation, exam] }
+        studyMode:
+          anyOf:
+            - { type: string, enum: [group, individual] }
+            - { type: "null" }
+        studySystem:
+          anyOf:
+            - { type: string, enum: [regular, intensive] }
+            - { type: "null" }
+        weeklySessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        totalSessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        duration:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        amount:
+          anyOf:
+            - { type: number }
+            - { type: "null" }
+        currency: { type: string }
+        unit: { type: string, enum: [monthly, level, package, unknown] }
+        status: { type: string, enum: [approved, needs_review, admin_approved] }
+        sourceVersion: { type: string }
+        message: { type: string }
+    RegistrationRequestInput:
+      type: object
+      required: [idempotencyKey, fullName, phone, email, country, languageId, courseType, paymentMethod]
+      properties:
+        idempotencyKey: { type: string, minLength: 36, maxLength: 36 }
+        fullName: { type: string, minLength: 2, maxLength: 160 }
+        phone: { type: string, minLength: 7, maxLength: 32 }
+        email: { type: string, format: email, maxLength: 254 }
+        country: { type: string, enum: [algeria, outside_algeria] }
+        goals: { type: string, maxLength: 3000 }
+        languageId: { type: integer, minimum: 1 }
+        courseType: { type: string, enum: [level, conversation, exam] }
+        levelAssessment: { type: string, enum: [beginner, placement_test, known] }
+        currentLevel: { type: string, enum: [A1, A2, B1, B2, C1, C2] }
+        targetLevel: { type: string, enum: [A1, A2, B1, B2, C1, C2] }
+        studyMode: { type: string, enum: [group, individual] }
+        studySystem: { type: string, enum: [regular, intensive] }
+        weeklySessions: { type: integer, minimum: 1, maximum: 7 }
+        totalSessions: { type: integer, minimum: 1, maximum: 100 }
+        examName: { type: string, maxLength: 100 }
+        targetScore: { type: string, maxLength: 80 }
+        examDate: { type: string, format: date }
+        schedulePreferences: { type: string, maxLength: 500 }
+        paymentMethod: { type: string, enum: [ccp, baridi_mob, edahabia_cib, international_manual, other] }
+        paymentMethodOther: { type: string, maxLength: 120 }
+    RegistrationReceipt:
+      type: object
+      required: [requestNo, status, paymentStatus, quote, createdAt]
+      properties:
+        requestNo: { type: string }
+        status: { type: string, enum: [pending_review, accepted, rejected, needs_info] }
+        paymentStatus: { type: string, enum: [awaiting_verification, verified, rejected] }
+        quote: { $ref: "#/components/schemas/RegistrationQuote" }
+        createdAt: { type: string, format: date-time }
+    RegistrationAdminRequest:
+      type: object
+      required: [id, requestNo, fullName, phone, email, country, languageId, languageTitle, courseType, paymentMethod, paymentStatus, status, quote, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        requestNo: { type: string }
+        fullName: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        country: { type: string, enum: [algeria, outside_algeria] }
+        goals: { type: string }
+        languageId: { type: integer }
+        languageTitle: { type: string }
+        courseType: { type: string, enum: [level, conversation, exam] }
+        levelAssessment:
+          anyOf:
+            - { type: string, enum: [beginner, placement_test, known] }
+            - { type: "null" }
+        currentLevel:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        targetLevel:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        studyMode:
+          anyOf:
+            - { type: string, enum: [group, individual] }
+            - { type: "null" }
+        studySystem:
+          anyOf:
+            - { type: string, enum: [regular, intensive] }
+            - { type: "null" }
+        weeklySessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        totalSessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        duration:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        examName:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        targetScore:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        examDate:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        schedulePreferences:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        paymentMethod: { type: string, enum: [ccp, baridi_mob, edahabia_cib, international_manual, other] }
+        paymentMethodOther:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        paymentStatus: { type: string, enum: [awaiting_verification, verified, rejected] }
+        status: { type: string, enum: [pending_review, accepted, rejected, needs_info] }
+        quote: { $ref: "#/components/schemas/RegistrationQuote" }
+        adminNote: { type: string }
+        studentProfileId:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        enrollmentId:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    RegistrationRequestUpdateInput:
+      type: object
+      properties:
+        status: { type: string, enum: [pending_review, accepted, rejected, needs_info] }
+        paymentStatus: { type: string, enum: [awaiting_verification, verified, rejected] }
+        finalAmount:
+          anyOf:
+            - { type: number, minimum: 0 }
+            - { type: "null" }
+        finalCurrency: { type: string, minLength: 3, maxLength: 3 }
+        finalUnit: { type: string, enum: [monthly, level, package] }
+        adminNote: { type: string, maxLength: 2000 }
+        reason: { type: string, minLength: 3, maxLength: 1000 }
+    RegistrationConversionInput:
+      type: object
+      required: [courseId, startDate]
+      properties:
+        courseId: { type: integer, minimum: 1 }
+        groupId: { type: integer, minimum: 1 }
+        startDate: { type: string, format: date }
+    RegistrationConversionReceipt:
+      type: object
+      required: [requestNo, studentProfileId, enrollmentId, courseTitle]
+      properties:
+        requestNo: { type: string }
+        studentProfileId: { type: integer }
+        enrollmentId: { type: integer }
+        courseTitle: { type: string }
+    RegistrationPricingRule:
+      type: object
+      required: [id, country, languageId, courseType, studyMode, studySystem, weeklySessions, totalSessions, amount, currency, unit, duration, lessonHours, needsReview, reviewNote, sourceVersion, sourcePage, active, updatedAt]
+      properties:
+        id: { type: integer }
+        country: { type: string, enum: [algeria, outside_algeria] }
+        languageId:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        courseType: { type: string, enum: [level, conversation, exam] }
+        studyMode:
+          anyOf:
+            - { type: string, enum: [group, individual] }
+            - { type: "null" }
+        studySystem:
+          anyOf:
+            - { type: string, enum: [regular, intensive] }
+            - { type: "null" }
+        weeklySessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        totalSessions:
+          anyOf:
+            - { type: integer }
+            - { type: "null" }
+        amount:
+          anyOf:
+            - { type: number }
+            - { type: "null" }
+        currency: { type: string }
+        unit: { type: string, enum: [monthly, level, package] }
+        duration:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        lessonHours:
+          anyOf:
+            - { type: number }
+            - { type: "null" }
+        needsReview: { type: boolean }
+        reviewNote: { type: string }
+        sourceVersion: { type: string }
+        sourcePage: { type: integer }
+        active: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+    RegistrationPricingRuleUpdateInput:
+      type: object
+      required: [amount, currency, unit, duration, lessonHours, needsReview, reviewNote, active, reason]
+      properties:
+        amount:
+          anyOf:
+            - { type: number, minimum: 0 }
+            - { type: "null" }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        unit: { type: string, enum: [monthly, level, package] }
+        duration:
+          anyOf:
+            - { type: string, maxLength: 100 }
+            - { type: "null" }
+        lessonHours:
+          anyOf:
+            - { type: number, minimum: 0.5, maximum: 8 }
+            - { type: "null" }
+        needsReview: { type: boolean }
+        reviewNote: { type: string, maxLength: 1000 }
+        active: { type: boolean }
+        reason: { type: string, minLength: 3, maxLength: 1000 }
     UploadInput:
       type: object
       required: [name, size, contentType]

@@ -17,6 +17,8 @@ import ProfilePage from '@/pages/profile';
 import LibraryPage from '@/pages/library';
 import CurriculumRequestsPage from '@/pages/curriculum-requests';
 import ChatsPage from '@/pages/chats';
+import SignUpPage from '@/pages/sign-up';
+import RegistrationRequestsPage from '@/pages/registration-requests';
 import { NativeAuthProvider, useNativeAuth } from '@/lib/native-auth';
 import { SchoolRealtime } from '@/components/school-realtime';
 
@@ -51,7 +53,8 @@ function Routes() {
   return <ErrorBoundary resetKey={location}><Switch>
     <Route path="/" component={Home} />
     <Route path="/sign-in/*?" component={NativeLoginPage} />
-    <Route path="/sign-up/*?"><Redirect to="/sign-in" /></Route>
+    <Route path="/sign-up/*?" component={SignUpPage} />
+    <Route path="/registration-requests">{() => shell(<RegistrationRequestsPage />)}</Route>
     <Route path="/languages">{() => <Adaptive entity="languages" />}</Route>
     <Route path="/levels">{() => <Adaptive entity="levels" />}</Route>
     <Route path="/courses">{() => <Adaptive entity="courses" />}</Route>

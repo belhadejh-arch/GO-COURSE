@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { seedCatalog } from "./seed-catalog";
+import { seedRegistrationPricing } from "./seed-registration-pricing";
 import { bootstrapAdmin } from "./bootstrap-admin";
 import { migrationConnectionString } from "./migration-connection";
 const connectionString=migrationConnectionString(process.env.DATABASE_URL,process.env.DATABASE_MIGRATION_URL);
@@ -40,7 +41,7 @@ async function setup(){
     try { await adoptExistingBaseline(client,folder);await client.query("commit"); }
     catch(error) { await client.query("rollback");throw error; }
     await migrate(db,{migrationsFolder:folder});
-    await db.transaction(async tx=>{await seedCatalog(tx);await bootstrapAdmin(tx);});
+    await db.transaction(async tx=>{await seedCatalog(tx);await seedRegistrationPricing(tx);await bootstrapAdmin(tx);});
     console.log("Database migrations and language catalog initialized successfully.");
   }finally{
     await client.query("select pg_advisory_unlock(740235)");
