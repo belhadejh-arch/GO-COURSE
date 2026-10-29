@@ -211,6 +211,14 @@ export async function requireConversation(a: Access, conversationId: number, sen
   if (!conversation) fail(404, "المحادثة غير موجودة.");
   if (a.user.role === "admin") {
     enforceChatAccess(a.user.role, null, send);
+    if (send) {
+      const [activeParticipant] = await db.select({ userId: chatConversationMembers.userId })
+        .from(chatConversationMembers).where(and(
+          eq(chatConversationMembers.conversationId, conversationId),
+          eq(chatConversationMembers.canSend, true),
+        )).limit(1);
+      if (!activeParticipant) fail(403, "لا يوجد مشاركون نشطون في هذه المحادثة لإرسال رسالة.");
+    }
     return { conversation, member: null };
   }
   const [member] = await db.select().from(chatConversationMembers).where(and(
@@ -223,7 +231,6 @@ export async function requireConversation(a: Access, conversationId: number, sen
 
 export function enforceChatAccess(role: string, member: { canSend: boolean } | null, send = false) {
   if (role === "admin") {
-    if (send) fail(403, "حساب الإدارة يطّلع على المحادثات ولا يرسل أو يعدّل الرسائل.");
     return;
   }
   if (!["teacher", "student"].includes(role)) fail(403, "المحادثات متاحة للأساتذة والطلبة فقط.");
@@ -396,7 +403,9 @@ export async function listConversations(a: Access, search?: string) {
         attachments: latestAttachments.get(last.id) ?? [],
       } : null,
       unreadCount: unreadMap.get(conversation.id) ?? 0,
-      canSend: a.user?.role !== "admin" && Boolean(myMembership?.canSend),
+      canSend: a.user?.role === "admin"
+        ? members.some((member) => member.canSend)
+        : Boolean(myMembership?.canSend),
       updatedAt: conversation.updatedAt.toISOString(),
     };
   });

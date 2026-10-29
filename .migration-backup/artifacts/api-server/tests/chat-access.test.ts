@@ -19,7 +19,7 @@ test("former section members retain read-only history", () => {
   assert.equal(statusOf(() => enforceChatAccess("student", { canSend: false }, true)), 403);
 });
 
-test("super admin is read-only even when not a conversation member", () => {
+test("admin can send from a conversation without becoming a course member", () => {
   assert.equal(statusOf(() => enforceChatAccess("admin", null)), undefined);
-  assert.equal(statusOf(() => enforceChatAccess("admin", null, true)), 403);
+  assert.equal(statusOf(() => enforceChatAccess("admin", null, true)), undefined);
 });

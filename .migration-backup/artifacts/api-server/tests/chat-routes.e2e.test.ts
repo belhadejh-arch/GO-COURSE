@@ -348,7 +348,8 @@ test("chat routes enforce scope, preserve history, and transfer private audio", 
       method: "POST",
       body: { body: "رسالة من الإدارة" },
     });
-    assert.equal(adminWrite.response.status, 403);
+    assert.equal(adminWrite.response.status, 201);
+    assert.equal(adminWrite.data.body, "رسالة من الإدارة");
 
     await withSchema(async (tx) => {
       await tx.update(schoolRecords).set({ status: "completed" }).where(eq(schoolRecords.id, enrollmentId));
