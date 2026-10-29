@@ -1,3 +1,6 @@
+/// <reference lib="dom" />
+/// <reference types="node" />
+
 // Vercel's same-origin /api bridge keeps Clerk cookies first-party. Secrets for
 // Neon and Clerk secrets never belong in Vercel. The public Render origin is
 // intentionally safe to commit; BACKEND_URL can override it for other deployments.

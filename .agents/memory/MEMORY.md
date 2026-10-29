@@ -2,3 +2,4 @@
 - [OpenAPI query generation](openapi-query-generation.md) — Avoid duplicate generated parameter types when GET operations mix path and query parameters.
 - [GO COURSE pricing authority](registration-pricing.md) — Never infer absent or conflicting rates; preserve the published currency, unit, and request-time quote.
 - [GO COURSE public registration](registration-intake.md) — Visitors submit requests from the homepage; private receipt uploads require review, and unknown prices must not prompt payment.
+- [Vercel API ambient types](vercel-api-types.md) — Vercel may type-check a nested API handler with the root config; keep DOM and Node type references scoped to that handler.
