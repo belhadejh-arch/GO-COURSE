@@ -88,6 +88,7 @@ router.post("/school/records/:entity",async(req,res)=>{
   if (!parsed.success) fail(400,"اسم السجل والبيانات مطلوبة.");
   if (["invoices","audit","notifications"].includes(entity)) fail(403,"هذه السجلات تُنشأ تلقائيًا فقط.");
   const raw=parsed.data.data || {};
+  if(entity==="groups"&&a.user?.role!=="admin")raw.catalogVisibility="private";
   canWrite(a,entity,raw);
   let title=parsed.data.title;
   let status=parsed.data.status || (["courses","lessons","resources","assignments"].includes(entity)?"draft":["sessions"].includes(entity)?"scheduled":["payments","submissions","subscriptions","curriculumRequests"].includes(entity)?"pending":"active");
@@ -119,6 +120,7 @@ router.patch("/school/records/:entity/:id",async(req,res)=>{
   if (!parsed.success) fail(400,"بيانات التعديل غير صالحة.");
   if (["invoices","audit"].includes(entity)) fail(403,"السجلات المالية وسجل التدقيق غير قابلين للتعديل.");
   const raw:Record<string,unknown>={...row.data,...parsed.data.data};
+  if(entity==="groups"&&a.user?.role!=="admin")raw.catalogVisibility=row.data.catalogVisibility??"private";
   for (const key of Object.keys(raw)) if (raw[key]===null || raw[key]==="") delete raw[key];
   canWrite(a,entity,raw,row);
   if (a.user?.role==="teacher" && entity!=="submissions" && row.data.courseId!==raw.courseId) fail(403,"لا يمكن نقل المحتوى إلى دورة أخرى.");

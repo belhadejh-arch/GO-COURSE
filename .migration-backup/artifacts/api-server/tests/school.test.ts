@@ -12,22 +12,27 @@ const language=row(1,"languages",{code:"en"});
 const teacher=row(2,"teachers",{firstName:"Test",lastName:"Teacher",email:"teacher@example.invalid",phone:"+213555000000",languageIds:[1],levels:["A1","B1"],languageLevels:{"1":["A1"]}});
 const student=row(3,"students",{email:"student@example.invalid",languageIds:[1]});
 const otherStudent=row(4,"students",{email:"other@example.invalid"});
-const course=row(5,"courses",{languageId:1,courseType:"level",level:"A1",studySystem:"regular",weeklySessions:2,totalSessions:16,teacherIds:[2],startDate:"2030-01-01",days:[1,3],time:"17:00"},"published");
+const course=row(5,"courses",{languageId:1,studyMode:"group",courseType:"level",level:"A1",studySystem:"regular",weeklySessions:2,totalSessions:16,teacherIds:[2],startDate:"2030-01-01",days:[1,3],time:"17:00"},"published");
+const publicGroup=row(12,"groups",{courseId:5,teacherId:2,catalogVisibility:"public"},"active");
+const privateGroup=row(13,"groups",{courseId:5,teacherId:2,catalogVisibility:"private"},"active");
 const enrollment=row(6,"enrollments",{studentId:3,courseId:5,teacherId:2,languageId:1});
 const session=row(7,"sessions",{courseId:5,teacherId:2,startsAt:"2030-01-01T17:00:00Z",endsAt:"2030-01-01T18:00:00Z",meetingUrl:"https://example.invalid/class"},"scheduled");
 const lesson=row(8,"lessons",{courseId:5,number:1,body:"Lesson content"},"published");
 const assignment=row(9,"assignments",{courseId:5,dueDate:"2030-02-01T17:00:00Z",questions:[{type:"multiple_choice",prompt:"Choose A",options:["A","B"],correctAnswer:"A",points:2},{type:"true_false",prompt:"True?",correctAnswer:"true",points:1}]},"published");
 const plan=row(10,"plans",{amount:5000,currency:"DZD",durationDays:30,courseIds:[5]});
 const curriculum=row(11,"curricula",{languageId:1,languageCode:"en"},"published");
-const rows=[language,teacher,student,otherStudent,course,enrollment,session,lesson,assignment,plan,curriculum];
+const rows=[language,teacher,student,otherStudent,course,enrollment,session,lesson,assignment,plan,curriculum,publicGroup,privateGroup];
 const user=(role:string,permissions:string[]=[]):SchoolUser=>({id:role==="admin"?"owner-test":`${role}-test`,email:`${role}@example.invalid`,name:"Test account",role,permissions,enabled:true,createdAt:new Date()});
 const context=(role:string):Access=>({user:role==="guest"?null:user(role),profileId:role==="student"?3:role==="teacher"?2:0,rows,courseIds:new Set(role==="student"||role==="teacher"?[5]:[]),paidCourseIds:new Set(role==="student"?[5]:[])});
 const admin=context("admin"),studentAccess=context("student"),teacherAccess=context("teacher");
 const expectStatus=(fn:()=>unknown,status:number)=>assert.throws(fn,(err:unknown)=>(err as {status:number}).status===status);
 
-test("public catalog exposes published course, not draft",()=>{
+test("public catalog exposes only published group courses in public active groups",()=>{
   assert.equal(canRead(context("guest"),course),true);
   assert.equal(canRead(context("guest"),{...course,status:"draft"}),false);
+  assert.equal(canRead(context("guest"),{...course,data:{...course.data,studyMode:"individual"}}),false);
+  assert.equal(canRead({...context("guest"),rows:rows.filter(r=>r.id!==publicGroup.id)},course),false);
+  assert.equal(canRead({...context("guest"),rows:rows.map(r=>r.id===publicGroup.id?{...r,status:"disabled"}:r)},course),false);
 });
 test("guest cannot read a student's private profile",()=>assert.equal(canRead(context("guest"),student),false));
 test("guest cannot create a record",()=>expectStatus(()=>canWrite(context("guest"),"students",{}),401));

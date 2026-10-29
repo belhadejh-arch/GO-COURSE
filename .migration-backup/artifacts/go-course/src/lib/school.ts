@@ -192,6 +192,7 @@ export const ENTITIES: Record<string, EntityConfig> = {
     fields: [
       { key: 'courseId', label: 'الدورة', type: 'rel', entity: 'courses', required: true },
       { key: 'teacherId', label: 'الأستاذ', type: 'rel', entity: 'teachers', required: true },
+      { key: 'catalogVisibility', label: 'الظهور في الصفحة الرئيسية', type: 'select', options: [{ value: 'private', label: 'خاص' }, { value: 'public', label: 'عام للزوار' }], def: 'private', hideFor: ['staff', 'teacher', 'student'], hint: 'تظهر الدورة الجماعية المرتبطة بهذه المجموعة للزوار عند اختيار «عام للزوار».' },
     ],
     columns: [{ label: 'الدورة', key: 'courseId', kind: 'rel', entity: 'courses' }, { label: 'الأستاذ', key: 'teacherId', kind: 'rel', entity: 'teachers' }],
     write: TEACH, related: ['courses', 'teachers'], hint: 'مجموعات الدراسة داخل كل دورة.',
@@ -408,6 +409,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     { href: '/teachers', label: 'الأساتذة', icon: 'Presentation', roles: ['admin', 'staff'] },
     { href: '/enrollments', label: 'التسجيلات', icon: 'UserPlus', roles: ['admin', 'staff'] },
     { href: '/registration-requests', label: 'طلبات التسجيل', icon: 'ClipboardList', roles: ['admin'] },
+    { href: '/sign-up', label: 'طلب التسجيل', icon: 'UserPlus', roles: ALL },
   ] },
   { group: 'المالية', items: [
     { href: '/plans', label: 'الباقات', icon: 'Tags', roles: ALL },

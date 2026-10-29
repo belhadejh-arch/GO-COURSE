@@ -59,7 +59,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             ) : (
               <>
                 <Link href="/sign-in" className="hidden h-10 items-center rounded-xl px-4 text-sm font-semibold hover:bg-secondary sm:inline-flex" data-testid="link-sign-in">دخول</Link>
-                <Link href="/sign-up" className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md" data-testid="link-sign-up">ابدأ الآن</Link>
+                <Link href="/sign-up" className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md" data-testid="link-sign-up">طلب التسجيل</Link>
               </>
             )}
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(!open)} aria-label="القائمة" data-testid="button-menu">{open ? <X /> : <Menu />}</Button>
@@ -68,6 +68,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         {open && (
           <nav className="grid gap-1 border-t border-border bg-background px-4 py-3 md:hidden">
             {links.map((l) => <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-secondary">{l.label}</Link>)}
+            {!isSignedIn && <Link href="/sign-up" onClick={() => setOpen(false)} className="rounded-lg bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground">طلب التسجيل</Link>}
             {!isSignedIn && <Link href="/sign-in" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-secondary">دخول</Link>}
           </nav>
         )}
@@ -100,7 +101,7 @@ function NavList({ role, onNavigate }: { role: Role; onNavigate?: () => void }) 
   return (
     <nav className="space-y-5">
       {NAV.map((g) => {
-        const items = g.items.filter((i) => i.roles.includes(role) && canRead(i.href.slice(1)));
+        const items = g.items.filter((i) => i.roles.includes(role) && (i.href === '/sign-up' || canRead(i.href.slice(1))));
         if (!items.length) return null;
         return (
           <div key={g.group}>

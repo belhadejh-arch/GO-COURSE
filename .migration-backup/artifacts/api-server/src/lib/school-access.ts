@@ -53,7 +53,16 @@ export function canRead(a: Access, r: SchoolRow): boolean {
   if (r.entity === "notifications") return !!a.user && r.ownerId === a.user.id;
   if (r.entity === "audit" || r.entity === "settings") return false;
   if (catalog.has(r.entity)) {
-    if (r.entity === "courses") return a.user?.role === "teacher" ? a.courseIds.has(r.id) : (r.status === "published" && a.rows.some(l=>l.id===numberId(r.data.languageId) && l.entity==="languages" && l.status==="active")) || a.courseIds.has(r.id);
+    if (r.entity === "courses") {
+      const languageIsActive = a.rows.some(l => l.id === numberId(r.data.languageId) && l.entity === "languages" && l.status === "active");
+      const courseIsPublished = r.status === "published" && languageIsActive;
+      if (!a.user) {
+        const hasPublicActiveGroup = a.rows.some(g => g.entity === "groups" && g.status === "active"
+          && numberId(g.data.courseId) === r.id && g.data.catalogVisibility === "public");
+        return courseIsPublished && r.data.studyMode === "group" && hasPublicActiveGroup;
+      }
+      return a.user.role === "teacher" ? a.courseIds.has(r.id) : courseIsPublished || a.courseIds.has(r.id);
+    }
     return ["active","published"].includes(r.status);
   }
   if (!a.user) return false;

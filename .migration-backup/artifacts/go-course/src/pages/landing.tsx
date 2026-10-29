@@ -2,6 +2,7 @@ import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import { ArrowLeft, BookOpenCheck, CalendarCheck, ClipboardCheck, Presentation, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
 import { useListSchoolRecords } from '@workspace/api-client-react';
+import type { SchoolRecord } from '@workspace/api-client-react';
 import { PublicLayout } from '@/components/layouts';
 import { LEVELS } from '@/lib/school';
 import { ErrorState, ListSkeleton } from '@/components/common';
@@ -14,10 +15,14 @@ const chips = [
   { t: 'Hola', c: 'bg-[hsl(var(--chart-2))] text-primary-foreground', pos: 'bottom-6 end-6', r: '-5deg' },
 ];
 const levelTint = ['bg-secondary', 'bg-primary/15', 'bg-accent/35', 'bg-[hsl(var(--chart-2)/0.3)]', 'bg-[hsl(var(--chart-4)/0.2)]', 'bg-primary text-primary-foreground'];
+const live = (r: SchoolRecord) => r.status !== 'archived' && r.status !== 'inactive' && r.status !== 'draft';
+const courseTypes: Record<string, string> = { level: 'تحسين المستوى', conversation: 'تحسين المحادثة', exam: 'التحضير للامتحانات' };
 
 export default function Landing() {
   const langs = useListSchoolRecords('languages');
+  const courses = useListSchoolRecords('courses');
   const shown = (langs.data ?? []).filter((l) => l.status !== 'archived' && l.status !== 'inactive');
+  const publicCourses = (courses.data ?? []).filter((c) => live(c) && c.data.studyMode === 'group');
   return (
     <PublicLayout>
       <section className="relative overflow-hidden">
@@ -68,6 +73,35 @@ export default function Landing() {
           </div>
         ) : (
           <p className="rounded-2xl border border-dashed border-input bg-card/60 p-6 text-center text-sm text-muted-foreground" data-testid="text-no-languages">ستظهر اللغات هنا فور إضافتها من لوحة الإدارة.</p>
+        )}
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-12">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div><h2 className="text-2xl font-extrabold sm:text-3xl">الدورات الجماعية المتاحة</h2><p className="mt-1 text-sm text-muted-foreground">تظهر هنا الدورات الجماعية التي جعلتها الإدارة عامة للزوار.</p></div>
+          <Link href="/courses" className="shrink-0 text-sm font-bold text-primary hover:underline" data-testid="link-all-courses">عرض الكل</Link>
+        </div>
+        {courses.isLoading ? <ListSkeleton rows={2} /> : courses.isError ? (
+          <ErrorState message={courses.error instanceof Error ? courses.error.message : 'تعذّر تحميل الدورات المنشورة.'} onRetry={() => courses.refetch()} />
+        ) : publicCourses.length ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {publicCourses.map((course, i) => (
+              <motion.div key={course.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.03 }}>
+                <Link href={`/courses/${course.id}`} className="block h-full rounded-2xl border border-card-border bg-card p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg" data-testid={`card-public-course-${course.id}`}>
+                  <div className="flex flex-wrap gap-2 text-xs font-bold">
+                    <span className="rounded-full bg-primary/12 px-2.5 py-0.5 text-primary">{langs.data?.find((l) => l.id === Number(course.data.languageId))?.title ?? 'لغة'}</span>
+                    <span className="rounded-full bg-accent/35 px-2.5 py-0.5">{courseTypes[String(course.data.courseType)] ?? 'دورة جماعية'}</span>
+                    {course.data.level != null && <span className="rounded-full bg-secondary px-2.5 py-0.5 text-secondary-foreground">{String(course.data.level)}</span>}
+                  </div>
+                  <h3 className="mt-3 text-lg font-extrabold">{course.title}</h3>
+                  {typeof course.data.description === 'string' && course.data.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{course.data.description}</p>}
+                  <span className="mt-4 inline-block text-sm font-bold text-primary">تفاصيل الدورة ←</span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-input bg-card/60 p-6 text-center text-sm text-muted-foreground" data-testid="text-no-public-courses">لا توجد دورات جماعية منشورة للعامة حاليًا.</p>
         )}
       </section>
 
