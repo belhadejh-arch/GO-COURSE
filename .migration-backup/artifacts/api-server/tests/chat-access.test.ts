@@ -14,12 +14,12 @@ test("teachers and students can read only conversations in which they are member
   assert.equal(statusOf(() => enforceChatAccess("staff", { canSend: true })), 403);
 });
 
-test("former section members retain read-only history", () => {
+test("former section members retain history and can still send", () => {
   assert.equal(statusOf(() => enforceChatAccess("student", { canSend: false })), undefined);
-  assert.equal(statusOf(() => enforceChatAccess("student", { canSend: false }, true)), 403);
+  assert.equal(statusOf(() => enforceChatAccess("student", { canSend: false }, true)), undefined);
 });
 
-test("admin can send from a conversation without becoming a course member", () => {
+test("admin can send without becoming a course member", () => {
   assert.equal(statusOf(() => enforceChatAccess("admin", null)), undefined);
   assert.equal(statusOf(() => enforceChatAccess("admin", null, true)), undefined);
 });

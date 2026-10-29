@@ -353,14 +353,20 @@ test("chat routes enforce scope, preserve history, and transfer private audio", 
 
     await withSchema(async (tx) => {
       await tx.update(schoolRecords).set({ status: "completed" }).where(eq(schoolRecords.id, enrollmentId));
+      await tx.update(schoolRecords).set({ status: "disabled" }).where(eq(schoolRecords.id, groupId));
     });
     const retainedHistory = await call(`/school/chats/${groupChat.id}/messages`, tokens.student);
     assert.equal(retainedHistory.response.status, 200);
-    const deniedAfterCompletion = await call(`/school/chats/${groupChat.id}/messages`, tokens.student, {
+    const adminWriteWithoutActiveMembers = await call(`/school/chats/${groupChat.id}/messages`, admin.token, {
+      method: "POST",
+      body: { body: "رسالة الإدارة رغم عدم وجود تسجيل نشط" },
+    });
+    assert.equal(adminWriteWithoutActiveMembers.response.status, 201);
+    const studentWriteAfterCompletion = await call(`/school/chats/${groupChat.id}/messages`, tokens.student, {
       method: "POST",
       body: { body: "رسالة بعد انتهاء التسجيل" },
     });
-    assert.equal(deniedAfterCompletion.response.status, 403);
+    assert.equal(studentWriteAfterCompletion.response.status, 201);
 
     await withSchema(async (tx) => {
       const [teacherProfile] = await tx.select().from(schoolRecords)

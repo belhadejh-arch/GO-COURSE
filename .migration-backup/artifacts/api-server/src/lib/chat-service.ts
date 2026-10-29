@@ -211,14 +211,6 @@ export async function requireConversation(a: Access, conversationId: number, sen
   if (!conversation) fail(404, "المحادثة غير موجودة.");
   if (a.user.role === "admin") {
     enforceChatAccess(a.user.role, null, send);
-    if (send) {
-      const [activeParticipant] = await db.select({ userId: chatConversationMembers.userId })
-        .from(chatConversationMembers).where(and(
-          eq(chatConversationMembers.conversationId, conversationId),
-          eq(chatConversationMembers.canSend, true),
-        )).limit(1);
-      if (!activeParticipant) fail(403, "لا يوجد مشاركون نشطون في هذه المحادثة لإرسال رسالة.");
-    }
     return { conversation, member: null };
   }
   const [member] = await db.select().from(chatConversationMembers).where(and(
@@ -235,7 +227,6 @@ export function enforceChatAccess(role: string, member: { canSend: boolean } | n
   }
   if (!["teacher", "student"].includes(role)) fail(403, "المحادثات متاحة للأساتذة والطلبة فقط.");
   if (!member) fail(404, "المحادثة غير موجودة أو ليست ضمن صلاحيات حسابك.");
-  if (send && !member.canSend) fail(403, "انتهى التسجيل أو تغيّر القسم؛ يمكنك الاطلاع على السجل دون إرسال رسائل جديدة.");
 }
 
 function avatarUrl(userId: string) {
@@ -403,9 +394,7 @@ export async function listConversations(a: Access, search?: string) {
         attachments: latestAttachments.get(last.id) ?? [],
       } : null,
       unreadCount: unreadMap.get(conversation.id) ?? 0,
-      canSend: a.user?.role === "admin"
-        ? members.some((member) => member.canSend)
-        : Boolean(myMembership?.canSend),
+      canSend: a.user?.role === "admin" || Boolean(myMembership),
       updatedAt: conversation.updatedAt.toISOString(),
     };
   });
@@ -495,7 +484,6 @@ export async function createChatMessageRecord(
     const recipients = await tx.select({ userId: chatConversationMembers.userId })
       .from(chatConversationMembers).where(and(
         eq(chatConversationMembers.conversationId, conversationId),
-        eq(chatConversationMembers.canSend, true),
         ne(chatConversationMembers.userId, a.user!.id),
       ));
     if (recipients.length) {
